@@ -66,7 +66,7 @@ rustup update stable
 ### Build & install Nexus
 
 ```bash
-git clone https://github.com/yash1051/nexus.git
+git clone https://github.com/yash1051/nexus-optimization.git
 cd nexus
 cargo install --path .
 ```
