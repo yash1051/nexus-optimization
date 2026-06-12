@@ -66,7 +66,7 @@ lazy_static! {
     // Issue #1362: each capture expects a SINGLE file argument (`\S+$`). Multi-file
     // invocations like `head -3 a b c` fail to match so the segment is passed through
     // to the native `head`/`tail` binary — which already handles multi-file with
-    // `==> name <==` banners that `rtk read --max-lines` cannot reproduce.
+    // `==> name <==` banners that `nexus read --max-lines` cannot reproduce.
     static ref HEAD_N: Regex = Regex::new(r"^head\s+-(\d+)\s+(\S+)$").unwrap();
     static ref HEAD_LINES: Regex = Regex::new(r"^head\s+--lines=(\d+)\s+(\S+)$").unwrap();
     static ref TAIL_N: Regex = Regex::new(r"^tail\s+-(\d+)\s+(\S+)$").unwrap();
@@ -477,7 +477,7 @@ pub fn rewrite_command(
     let normalized_prefixes = normalize_transparent_prefixes(transparent_prefixes);
 
     // Simple (non-compound) already-RTK command — return as-is.
-    // For compound commands that start with "rtk" (e.g. "nexusgit add . && cargo test"),
+    // For compound commands that start with "rtk" (e.g. "nexus git add . && cargo test"),
     // fall through to rewrite_compound so the remaining segments get rewritten.
     let has_compound = trimmed.contains("&&")
         || trimmed.contains("||")
@@ -605,7 +605,7 @@ fn rewrite_line_range(cmd: &str) -> Option<String> {
         if let Some(caps) = re.captures(cmd) {
             let n = caps.get(1)?.as_str();
             let file = caps.get(2)?.as_str();
-            return Some(format!("nexusread {} --max-lines {}", file, n));
+            return Some(format!("nexus read {} --max-lines {}", file, n));
         }
     }
     if cmd.starts_with("head -") {
@@ -620,7 +620,7 @@ fn rewrite_line_range(cmd: &str) -> Option<String> {
         if let Some(caps) = re.captures(cmd) {
             let n = caps.get(1)?.as_str();
             let file = caps.get(2)?.as_str();
-            return Some(format!("nexusread {} --tail-lines {}", file, n));
+            return Some(format!("nexus read {} --tail-lines {}", file, n));
         }
     }
     None
@@ -764,8 +764,8 @@ fn rewrite_segment_inner(
     }
 
     // Most cat flags (-v, -A, -e, -t, -s, -b, --show-all, etc.) have different
-    // semantics than rtk read or no equivalent at all. Only `-n` (line numbers)
-    // maps correctly to `rtk read -n`. Skip rewrite for any other flag.
+    // semantics than nexus read or no equivalent at all. Only `-n` (line numbers)
+    // maps correctly to `nexus read -n`. Skip rewrite for any other flag.
     if let Some(cmd_args) = cmd_part.strip_prefix("cat ") {
         let args = cmd_args.trim_start();
         if args.starts_with('-') && !args.starts_with("-n ") && !args.starts_with("-n\t") {
@@ -791,10 +791,10 @@ fn rewrite_segment_inner(
 
     if let Some(parts) = parse_golangci_run_parts(cmd_part) {
         let rewritten = if parts.global_segment.is_empty() {
-            format!("nexusgolangci-lint {}", parts.run_segment)
+            format!("nexus golangci-lint {}", parts.run_segment)
         } else {
             format!(
-                "nexusgolangci-lint {} {}",
+                "nexus golangci-lint {} {}",
                 parts.global_segment, parts.run_segment
             )
         };
@@ -802,8 +802,8 @@ fn rewrite_segment_inner(
     }
 
     // #196: gh with --json/--jq/--template produces structured output that
-    // rtk gh would corrupt — skip rewrite so the caller gets raw JSON.
-    if rule.rtk_cmd == "nexusgh" {
+    // nexus gh would corrupt — skip rewrite so the caller gets raw JSON.
+    if rule.rtk_cmd == "nexus gh" {
         let args_lower = cmd_part.to_lowercase();
         if args_lower.contains("--json")
             || args_lower.contains("--jq")
@@ -857,7 +857,7 @@ mod tests {
         assert_eq!(
             classify_command("git status"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -870,7 +870,7 @@ mod tests {
         assert_eq!(
             classify_command("yadm status"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -883,7 +883,7 @@ mod tests {
         assert_eq!(
             classify_command("yadm diff"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 80.0,
                 status: RtkStatus::Existing,
@@ -895,7 +895,7 @@ mod tests {
     fn test_rewrite_yadm_status() {
         assert_eq!(
             rewrite_command_no_prefixes("yadm status", &[]),
-            Some("nexusgit status".to_string())
+            Some("nexus git status".to_string())
         );
     }
 
@@ -904,7 +904,7 @@ mod tests {
         assert_eq!(
             classify_command("git diff --cached"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 80.0,
                 status: RtkStatus::Existing,
@@ -917,7 +917,7 @@ mod tests {
         assert_eq!(
             classify_command("cargo test filter::"),
             Classification::Supported {
-                rtk_equivalent: "nexuscargo",
+                rtk_equivalent: "nexus cargo",
                 category: "Cargo",
                 estimated_savings_pct: 90.0,
                 status: RtkStatus::Existing,
@@ -930,7 +930,7 @@ mod tests {
         assert_eq!(
             classify_command("npx tsc --noEmit"),
             Classification::Supported {
-                rtk_equivalent: "nexustsc",
+                rtk_equivalent: "nexus tsc",
                 category: "Build",
                 estimated_savings_pct: 83.0,
                 status: RtkStatus::Existing,
@@ -943,7 +943,7 @@ mod tests {
         assert_eq!(
             classify_command("cat src/main.rs"),
             Classification::Supported {
-                rtk_equivalent: "nexusread",
+                rtk_equivalent: "nexus read",
                 category: "Files",
                 estimated_savings_pct: 60.0,
                 status: RtkStatus::Existing,
@@ -977,7 +977,7 @@ mod tests {
 
     #[test]
     fn test_classify_rtk_already() {
-        assert_eq!(classify_command("nexusgit status"), Classification::Ignored);
+        assert_eq!(classify_command("nexus git status"), Classification::Ignored);
     }
 
     #[test]
@@ -1003,7 +1003,7 @@ mod tests {
         assert_eq!(
             classify_command("GIT_SSH_COMMAND=ssh git push"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -1016,7 +1016,7 @@ mod tests {
         assert_eq!(
             classify_command("sudo docker ps"),
             Classification::Supported {
-                rtk_equivalent: "nexusdocker",
+                rtk_equivalent: "nexus docker",
                 category: "Infra",
                 estimated_savings_pct: 85.0,
                 status: RtkStatus::Existing,
@@ -1029,7 +1029,7 @@ mod tests {
         assert_eq!(
             classify_command("cargo check"),
             Classification::Supported {
-                rtk_equivalent: "nexuscargo",
+                rtk_equivalent: "nexus cargo",
                 category: "Cargo",
                 estimated_savings_pct: 80.0,
                 status: RtkStatus::Existing,
@@ -1042,7 +1042,7 @@ mod tests {
         assert_eq!(
             classify_command("cargo check --all-targets"),
             Classification::Supported {
-                rtk_equivalent: "nexuscargo",
+                rtk_equivalent: "nexus cargo",
                 category: "Cargo",
                 estimated_savings_pct: 80.0,
                 status: RtkStatus::Existing,
@@ -1055,7 +1055,7 @@ mod tests {
         assert_eq!(
             classify_command("cargo fmt"),
             Classification::Supported {
-                rtk_equivalent: "nexuscargo",
+                rtk_equivalent: "nexus cargo",
                 category: "Cargo",
                 estimated_savings_pct: 80.0,
                 status: RtkStatus::Passthrough,
@@ -1068,7 +1068,7 @@ mod tests {
         assert_eq!(
             classify_command("cargo clippy --all-targets"),
             Classification::Supported {
-                rtk_equivalent: "nexuscargo",
+                rtk_equivalent: "nexus cargo",
                 category: "Cargo",
                 estimated_savings_pct: 80.0,
                 status: RtkStatus::Existing,
@@ -1111,7 +1111,7 @@ mod tests {
         assert_eq!(
             classify_command("find . -name foo"),
             Classification::Supported {
-                rtk_equivalent: "nexusfind",
+                rtk_equivalent: "nexus find",
                 category: "Files",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -1170,7 +1170,7 @@ mod tests {
         assert_eq!(
             classify_command("mypy src/"),
             Classification::Supported {
-                rtk_equivalent: "nexusmypy",
+                rtk_equivalent: "nexus mypy",
                 category: "Build",
                 estimated_savings_pct: 80.0,
                 status: RtkStatus::Existing,
@@ -1183,7 +1183,7 @@ mod tests {
         assert_eq!(
             classify_command("python3 -m mypy --strict"),
             Classification::Supported {
-                rtk_equivalent: "nexusmypy",
+                rtk_equivalent: "nexus mypy",
                 category: "Build",
                 estimated_savings_pct: 80.0,
                 status: RtkStatus::Existing,
@@ -1197,7 +1197,7 @@ mod tests {
     fn test_rewrite_git_status() {
         assert_eq!(
             rewrite_command_no_prefixes("git status", &[]),
-            Some("nexusgit status".into())
+            Some("nexus git status".into())
         );
     }
 
@@ -1205,7 +1205,7 @@ mod tests {
     fn test_rewrite_git_log() {
         assert_eq!(
             rewrite_command_no_prefixes("git log -10", &[]),
-            Some("nexusgit log -10".into())
+            Some("nexus git log -10".into())
         );
     }
 
@@ -1215,7 +1215,7 @@ mod tests {
     fn test_rewrite_git_dash_c_status() {
         assert_eq!(
             rewrite_command_no_prefixes("git -C /path/to/repo status", &[]),
-            Some("nexusgit -C /path/to/repo status".into())
+            Some("nexus git -C /path/to/repo status".into())
         );
     }
 
@@ -1223,7 +1223,7 @@ mod tests {
     fn test_rewrite_git_dash_c_log() {
         assert_eq!(
             rewrite_command_no_prefixes("git -C /tmp/myrepo log --oneline -5", &[]),
-            Some("nexusgit -C /tmp/myrepo log --oneline -5".into())
+            Some("nexus git -C /tmp/myrepo log --oneline -5".into())
         );
     }
 
@@ -1231,7 +1231,7 @@ mod tests {
     fn test_rewrite_git_dash_c_diff() {
         assert_eq!(
             rewrite_command_no_prefixes("git -C /home/user/project diff --name-only", &[]),
-            Some("nexusgit -C /home/user/project diff --name-only".into())
+            Some("nexus git -C /home/user/project diff --name-only".into())
         );
     }
 
@@ -1242,7 +1242,7 @@ mod tests {
             matches!(
                 result,
                 Classification::Supported {
-                    rtk_equivalent: "nexusgit",
+                    rtk_equivalent: "nexus git",
                     ..
                 }
             ),
@@ -1255,7 +1255,7 @@ mod tests {
     fn test_rewrite_cargo_test() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test", &[]),
-            Some("nexuscargo test".into())
+            Some("nexus cargo test".into())
         );
     }
 
@@ -1263,7 +1263,7 @@ mod tests {
     fn test_rewrite_compound_and() {
         assert_eq!(
             rewrite_command_no_prefixes("git add . && cargo test", &[]),
-            Some("nexusgit add . && rtk cargo test".into())
+            Some("nexus git add . && nexus cargo test".into())
         );
     }
 
@@ -1274,15 +1274,15 @@ mod tests {
                 "cargo fmt --all && cargo clippy --all-targets && cargo test",
                 &[]
             ),
-            Some("nexuscargo fmt --all && rtk cargo clippy --all-targets && rtk cargo test".into())
+            Some("nexus cargo fmt --all && nexus cargo clippy --all-targets && nexus cargo test".into())
         );
     }
 
     #[test]
     fn test_rewrite_already_rtk() {
         assert_eq!(
-            rewrite_command_no_prefixes("nexusgit status", &[]),
-            Some("nexusgit status".into())
+            rewrite_command_no_prefixes("nexus git status", &[]),
+            Some("nexus git status".into())
         );
     }
 
@@ -1290,7 +1290,7 @@ mod tests {
     fn test_rewrite_background_single_amp() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test & git status", &[]),
-            Some("nexuscargo test & rtk git status".into())
+            Some("nexus cargo test & nexus git status".into())
         );
     }
 
@@ -1298,7 +1298,7 @@ mod tests {
     fn test_rewrite_background_unsupported_right() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test & htop", &[]),
-            Some("nexuscargo test & htop".into())
+            Some("nexus cargo test & htop".into())
         );
     }
 
@@ -1307,7 +1307,7 @@ mod tests {
         // `&&` must still work after adding `&` support
         assert_eq!(
             rewrite_command_no_prefixes("cargo test && git status", &[]),
-            Some("nexuscargo test && rtk git status".into())
+            Some("nexus cargo test && nexus git status".into())
         );
     }
 
@@ -1325,7 +1325,7 @@ mod tests {
     fn test_rewrite_with_env_prefix() {
         assert_eq!(
             rewrite_command_no_prefixes("GIT_SSH_COMMAND=ssh git push", &[]),
-            Some("GIT_SSH_COMMAND=ssh rtk git push".into())
+            Some("GIT_SSH_COMMAND=ssh nexus git push".into())
         );
     }
 
@@ -1351,7 +1351,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(&format!("{command} --noEmit"), &[]),
-                Some("nexustsc --noEmit".into()),
+                Some("nexus tsc --noEmit".into()),
                 "Failed for command: {}",
                 command
             );
@@ -1362,13 +1362,13 @@ mod tests {
     fn test_rewrite_cat_file() {
         assert_eq!(
             rewrite_command_no_prefixes("cat src/main.rs", &[]),
-            Some("nexusread src/main.rs".into())
+            Some("nexus read src/main.rs".into())
         );
     }
 
     #[test]
     fn test_rewrite_cat_with_incompatible_flags_skipped() {
-        // cat flags with different semantics than rtk read — skip rewrite
+        // cat flags with different semantics than nexus read — skip rewrite
         assert_eq!(rewrite_command_no_prefixes("cat -A file.cpp", &[]), None);
         assert_eq!(rewrite_command_no_prefixes("cat -v file.txt", &[]), None);
         assert_eq!(rewrite_command_no_prefixes("cat -e file.txt", &[]), None);
@@ -1382,10 +1382,10 @@ mod tests {
 
     #[test]
     fn test_rewrite_cat_with_compatible_flags() {
-        // cat -n (line numbers) maps to rtk read -n — allow rewrite
+        // cat -n (line numbers) maps to nexus read -n — allow rewrite
         assert_eq!(
             rewrite_command_no_prefixes("cat -n file.txt", &[]),
-            Some("nexusread -n file.txt".into())
+            Some("nexus read -n file.txt".into())
         );
     }
 
@@ -1393,7 +1393,7 @@ mod tests {
     fn test_rewrite_rg_pattern() {
         assert_eq!(
             rewrite_command_no_prefixes("rg \"fn main\"", &[]),
-            Some("nexusgrep \"fn main\"".into())
+            Some("nexus grep \"fn main\"".into())
         );
     }
 
@@ -1419,7 +1419,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(&format!("{command} test"), &[]),
-                Some("nexusplaywright test".into()),
+                Some("nexus playwright test".into()),
                 "Failed for command: {}",
                 command
             );
@@ -1448,7 +1448,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(&format!("{command} --turbo"), &[]),
-                Some("nexusnext --turbo".into()),
+                Some("nexus next --turbo".into()),
                 "Failed for command: {}",
                 command
             );
@@ -1460,13 +1460,13 @@ mod tests {
         // After a pipe, the filter command stays raw
         assert_eq!(
             rewrite_command_no_prefixes("git log -10 | grep feat", &[]),
-            Some("nexusgit log -10 | grep feat".into())
+            Some("nexus git log -10 | grep feat".into())
         );
     }
 
     #[test]
     fn test_rewrite_find_pipe_skipped() {
-        // find in a pipe should NOT be rewritten — rtk find output format
+        // find in a pipe should NOT be rewritten — nexus find output format
         // is incompatible with pipe consumers like xargs (#439)
         assert_eq!(
             rewrite_command_no_prefixes("find . -name '*.rs' | xargs grep 'fn run'", &[]),
@@ -1487,7 +1487,7 @@ mod tests {
         // find WITHOUT a pipe should still be rewritten
         assert_eq!(
             rewrite_command_no_prefixes("find . -name '*.rs'", &[]),
-            Some("nexusfind . -name '*.rs'".into())
+            Some("nexus find . -name '*.rs'".into())
         );
     }
 
@@ -1509,8 +1509,8 @@ mod tests {
     fn test_rewrite_mixed_compound_partial() {
         // First segment already RTK, second gets rewritten
         assert_eq!(
-            rewrite_command_no_prefixes("nexusgit add . && cargo test", &[]),
-            Some("nexusgit add . && rtk cargo test".into())
+            rewrite_command_no_prefixes("nexus git add . && cargo test", &[]),
+            Some("nexus git add . && nexus cargo test".into())
         );
     }
 
@@ -1591,7 +1591,7 @@ mod tests {
     fn test_rewrite_non_rtk_disabled_env_still_rewrites() {
         assert_eq!(
             rewrite_command_no_prefixes("SOME_VAR=1 git status", &[]),
-            Some("SOME_VAR=1 rtk git status".into())
+            Some("SOME_VAR=1 nexus git status".into())
         );
     }
 
@@ -1602,7 +1602,7 @@ mod tests {
                 r#"GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git push"#,
                 &[]
             ),
-            Some(r#"GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" rtk git push"#.into())
+            Some(r#"GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" nexus git push"#.into())
         );
     }
 
@@ -1610,7 +1610,7 @@ mod tests {
     fn test_rewrite_env_single_quoted_value_with_spaces() {
         assert_eq!(
             rewrite_command_no_prefixes("EDITOR='vim -u NONE' git commit", &[]),
-            Some("EDITOR='vim -u NONE' rtk git commit".into())
+            Some("EDITOR='vim -u NONE' nexus git commit".into())
         );
     }
 
@@ -1618,7 +1618,7 @@ mod tests {
     fn test_rewrite_env_quoted_plus_unquoted() {
         assert_eq!(
             rewrite_command_no_prefixes(r#"FOO="bar baz" BAR=1 git status"#, &[]),
-            Some(r#"FOO="bar baz" BAR=1 rtk git status"#.into())
+            Some(r#"FOO="bar baz" BAR=1 nexus git status"#.into())
         );
     }
 
@@ -1626,7 +1626,7 @@ mod tests {
     fn test_rewrite_env_escaped_quotes_in_value() {
         assert_eq!(
             rewrite_command_no_prefixes(r#"FOO="he said \"hello\"" git status"#, &[]),
-            Some(r#"FOO="he said \"hello\"" rtk git status"#.into())
+            Some(r#"FOO="he said \"hello\"" nexus git status"#.into())
         );
     }
 
@@ -1635,7 +1635,7 @@ mod tests {
         assert_eq!(
             classify_command(r#"GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no" git push"#),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -1649,7 +1649,7 @@ mod tests {
     fn test_rewrite_redirect_2_gt_amp_1_with_pipe() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test 2>&1 | head", &[]),
-            Some("nexuscargo test 2>&1 | head".into())
+            Some("nexus cargo test 2>&1 | head".into())
         );
     }
 
@@ -1657,7 +1657,7 @@ mod tests {
     fn test_rewrite_redirect_2_gt_amp_1_trailing() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test 2>&1", &[]),
-            Some("nexuscargo test 2>&1".into())
+            Some("nexus cargo test 2>&1".into())
         );
     }
 
@@ -1666,7 +1666,7 @@ mod tests {
         // 2>/dev/null has no `&`, never broken — non-regression
         assert_eq!(
             rewrite_command_no_prefixes("git status 2>/dev/null", &[]),
-            Some("nexusgit status 2>/dev/null".into())
+            Some("nexus git status 2>/dev/null".into())
         );
     }
 
@@ -1674,7 +1674,7 @@ mod tests {
     fn test_rewrite_redirect_2_gt_amp_1_with_and() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test 2>&1 && echo done", &[]),
-            Some("nexuscargo test 2>&1 && echo done".into())
+            Some("nexus cargo test 2>&1 && echo done".into())
         );
     }
 
@@ -1682,7 +1682,7 @@ mod tests {
     fn test_rewrite_redirect_amp_gt_devnull() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test &>/dev/null", &[]),
-            Some("nexuscargo test &>/dev/null".into())
+            Some("nexus cargo test &>/dev/null".into())
         );
     }
 
@@ -1691,7 +1691,7 @@ mod tests {
         // Double redirect: only last one stripped, but full command rewrites correctly
         assert_eq!(
             rewrite_command_no_prefixes("git status 2>&1 >/dev/null", &[]),
-            Some("nexusgit status 2>&1 >/dev/null".into())
+            Some("nexus git status 2>&1 >/dev/null".into())
         );
     }
 
@@ -1700,7 +1700,7 @@ mod tests {
         // 2>&- (close stderr fd)
         assert_eq!(
             rewrite_command_no_prefixes("git status 2>&-", &[]),
-            Some("nexusgit status 2>&-".into())
+            Some("nexus git status 2>&-".into())
         );
     }
 
@@ -1720,7 +1720,7 @@ mod tests {
         // background `&` must still work after redirect fix
         assert_eq!(
             rewrite_command_no_prefixes("cargo test & git status", &[]),
-            Some("nexuscargo test & rtk git status".into())
+            Some("nexus cargo test & nexus git status".into())
         );
     }
 
@@ -1728,10 +1728,10 @@ mod tests {
 
     #[test]
     fn test_rewrite_head_numeric_flag() {
-        // head -20 file → rtk read file --max-lines 20 (not rtk read -20 file)
+        // head -20 file → nexus read file --max-lines 20 (not nexus read -20 file)
         assert_eq!(
             rewrite_command_no_prefixes("head -20 src/main.rs", &[]),
-            Some("nexusread src/main.rs --max-lines 20".into())
+            Some("nexus read src/main.rs --max-lines 20".into())
         );
     }
 
@@ -1739,16 +1739,16 @@ mod tests {
     fn test_rewrite_head_lines_long_flag() {
         assert_eq!(
             rewrite_command_no_prefixes("head --lines=50 src/lib.rs", &[]),
-            Some("nexusread src/lib.rs --max-lines 50".into())
+            Some("nexus read src/lib.rs --max-lines 50".into())
         );
     }
 
     #[test]
     fn test_rewrite_head_no_flag_still_rewrites() {
-        // plain `head file` → `rtk read file` (no numeric flag)
+        // plain `head file` → `nexus read file` (no numeric flag)
         assert_eq!(
             rewrite_command_no_prefixes("head src/main.rs", &[]),
-            Some("nexusread src/main.rs".into())
+            Some("nexus read src/main.rs".into())
         );
     }
 
@@ -1765,7 +1765,7 @@ mod tests {
     fn test_rewrite_tail_numeric_flag() {
         assert_eq!(
             rewrite_command_no_prefixes("tail -20 src/main.rs", &[]),
-            Some("nexusread src/main.rs --tail-lines 20".into())
+            Some("nexus read src/main.rs --tail-lines 20".into())
         );
     }
 
@@ -1773,7 +1773,7 @@ mod tests {
     fn test_rewrite_tail_n_space_flag() {
         assert_eq!(
             rewrite_command_no_prefixes("tail -n 12 src/lib.rs", &[]),
-            Some("nexusread src/lib.rs --tail-lines 12".into())
+            Some("nexus read src/lib.rs --tail-lines 12".into())
         );
     }
 
@@ -1781,7 +1781,7 @@ mod tests {
     fn test_rewrite_tail_lines_long_flag() {
         assert_eq!(
             rewrite_command_no_prefixes("tail --lines=7 src/lib.rs", &[]),
-            Some("nexusread src/lib.rs --tail-lines 7".into())
+            Some("nexus read src/lib.rs --tail-lines 7".into())
         );
     }
 
@@ -1789,7 +1789,7 @@ mod tests {
     fn test_rewrite_tail_lines_space_flag() {
         assert_eq!(
             rewrite_command_no_prefixes("tail --lines 7 src/lib.rs", &[]),
-            Some("nexusread src/lib.rs --tail-lines 7".into())
+            Some("nexus read src/lib.rs --tail-lines 7".into())
         );
     }
 
@@ -1808,9 +1808,9 @@ mod tests {
 
     // --- Issue #1362: head/tail with multiple files falls back to native command ---
     //
-    // `rtk read <file> --max-lines N` only accepts a single positional file path in
+    // `nexus read <file> --max-lines N` only accepts a single positional file path in
     // a shape that maps cleanly to `head -N`. Rewriting `head -N a b c` to
-    // `rtk read a b c --max-lines N` previously produced a command where `rtk read`
+    // `nexus read a b c --max-lines N` previously produced a command where `nexus read`
     // would concatenate the files without the `==> name <==` banners that native
     // `head` emits, so the fix is to skip the rewrite and let the shell run the
     // real `head`/`tail` binary.
@@ -1870,7 +1870,7 @@ mod tests {
         assert!(matches!(
             classify_command("gh release list"),
             Classification::Supported {
-                rtk_equivalent: "nexusgh",
+                rtk_equivalent: "nexus gh",
                 ..
             }
         ));
@@ -1881,7 +1881,7 @@ mod tests {
         assert!(matches!(
             classify_command("glab mr list"),
             Classification::Supported {
-                rtk_equivalent: "nexusglab",
+                rtk_equivalent: "nexus glab",
                 ..
             }
         ));
@@ -1892,7 +1892,7 @@ mod tests {
         assert!(matches!(
             classify_command("glab ci list"),
             Classification::Supported {
-                rtk_equivalent: "nexusglab",
+                rtk_equivalent: "nexus glab",
                 ..
             }
         ));
@@ -1903,7 +1903,7 @@ mod tests {
         assert!(matches!(
             classify_command("glab release list"),
             Classification::Supported {
-                rtk_equivalent: "nexusglab",
+                rtk_equivalent: "nexus glab",
                 ..
             }
         ));
@@ -1913,7 +1913,7 @@ mod tests {
     fn test_rewrite_glab_mr_list() {
         assert_eq!(
             rewrite_command_no_prefixes("glab mr list", &[]),
-            Some("nexusglab mr list".into())
+            Some("nexus glab mr list".into())
         );
     }
 
@@ -1921,7 +1921,7 @@ mod tests {
     fn test_rewrite_glab_ci_status() {
         assert_eq!(
             rewrite_command_no_prefixes("glab ci status", &[]),
-            Some("nexusglab ci status".into())
+            Some("nexus glab ci status".into())
         );
     }
 
@@ -1930,7 +1930,7 @@ mod tests {
         assert!(matches!(
             classify_command("cargo install rtk"),
             Classification::Supported {
-                rtk_equivalent: "nexuscargo",
+                rtk_equivalent: "nexus cargo",
                 ..
             }
         ));
@@ -1941,7 +1941,7 @@ mod tests {
         assert!(matches!(
             classify_command("docker run --rm ubuntu bash"),
             Classification::Supported {
-                rtk_equivalent: "nexusdocker",
+                rtk_equivalent: "nexus docker",
                 ..
             }
         ));
@@ -1952,7 +1952,7 @@ mod tests {
         assert!(matches!(
             classify_command("docker exec -it mycontainer bash"),
             Classification::Supported {
-                rtk_equivalent: "nexusdocker",
+                rtk_equivalent: "nexus docker",
                 ..
             }
         ));
@@ -1963,7 +1963,7 @@ mod tests {
         assert!(matches!(
             classify_command("docker build -t myimage ."),
             Classification::Supported {
-                rtk_equivalent: "nexusdocker",
+                rtk_equivalent: "nexus docker",
                 ..
             }
         ));
@@ -1974,7 +1974,7 @@ mod tests {
         assert!(matches!(
             classify_command("kubectl describe pod mypod"),
             Classification::Supported {
-                rtk_equivalent: "nexuskubectl",
+                rtk_equivalent: "nexus kubectl",
                 ..
             }
         ));
@@ -1985,7 +1985,7 @@ mod tests {
         assert!(matches!(
             classify_command("kubectl apply -f deploy.yaml"),
             Classification::Supported {
-                rtk_equivalent: "nexuskubectl",
+                rtk_equivalent: "nexus kubectl",
                 ..
             }
         ));
@@ -1996,7 +1996,7 @@ mod tests {
         assert!(matches!(
             classify_command("tree src/"),
             Classification::Supported {
-                rtk_equivalent: "nexustree",
+                rtk_equivalent: "nexus tree",
                 ..
             }
         ));
@@ -2007,7 +2007,7 @@ mod tests {
         assert!(matches!(
             classify_command("diff file1.txt file2.txt"),
             Classification::Supported {
-                rtk_equivalent: "nexusdiff",
+                rtk_equivalent: "nexus diff",
                 ..
             }
         ));
@@ -2017,7 +2017,7 @@ mod tests {
     fn test_rewrite_tree() {
         assert_eq!(
             rewrite_command_no_prefixes("tree src/", &[]),
-            Some("nexustree src/".into())
+            Some("nexus tree src/".into())
         );
     }
 
@@ -2025,7 +2025,7 @@ mod tests {
     fn test_rewrite_diff() {
         assert_eq!(
             rewrite_command_no_prefixes("diff file1.txt file2.txt", &[]),
-            Some("nexusdiff file1.txt file2.txt".into())
+            Some("nexus diff file1.txt file2.txt".into())
         );
     }
 
@@ -2033,7 +2033,7 @@ mod tests {
     fn test_rewrite_gh_release() {
         assert_eq!(
             rewrite_command_no_prefixes("gh release list", &[]),
-            Some("nexusgh release list".into())
+            Some("nexus gh release list".into())
         );
     }
 
@@ -2041,7 +2041,7 @@ mod tests {
     fn test_rewrite_cargo_install() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo install rtk", &[]),
-            Some("nexuscargo install rtk".into())
+            Some("nexus cargo install rtk".into())
         );
     }
 
@@ -2049,7 +2049,7 @@ mod tests {
     fn test_rewrite_kubectl_describe() {
         assert_eq!(
             rewrite_command_no_prefixes("kubectl describe pod mypod", &[]),
-            Some("nexuskubectl describe pod mypod".into())
+            Some("nexus kubectl describe pod mypod".into())
         );
     }
 
@@ -2057,7 +2057,7 @@ mod tests {
     fn test_rewrite_docker_run() {
         assert_eq!(
             rewrite_command_no_prefixes("docker run --rm ubuntu bash", &[]),
-            Some("nexusdocker run --rm ubuntu bash".into())
+            Some("nexus docker run --rm ubuntu bash".into())
         );
     }
 
@@ -2066,7 +2066,7 @@ mod tests {
         assert!(matches!(
             classify_command("swift test"),
             Classification::Supported {
-                rtk_equivalent: "nexusswift",
+                rtk_equivalent: "nexus swift",
                 category: "Build",
                 estimated_savings_pct: 90.0,
                 status: RtkStatus::Existing,
@@ -2078,7 +2078,7 @@ mod tests {
     fn test_rewrite_swift_test() {
         assert_eq!(
             rewrite_command_no_prefixes("swift test --parallel", &[]),
-            Some("nexusswift test --parallel".into())
+            Some("nexus swift test --parallel".into())
         );
     }
 
@@ -2088,7 +2088,7 @@ mod tests {
     fn test_rewrite_docker_compose_ps() {
         assert_eq!(
             rewrite_command_no_prefixes("docker compose ps", &[]),
-            Some("nexusdocker compose ps".into())
+            Some("nexus docker compose ps".into())
         );
     }
 
@@ -2096,7 +2096,7 @@ mod tests {
     fn test_rewrite_docker_compose_logs() {
         assert_eq!(
             rewrite_command_no_prefixes("docker compose logs web", &[]),
-            Some("nexusdocker compose logs web".into())
+            Some("nexus docker compose logs web".into())
         );
     }
 
@@ -2104,7 +2104,7 @@ mod tests {
     fn test_rewrite_docker_compose_build() {
         assert_eq!(
             rewrite_command_no_prefixes("docker compose build", &[]),
-            Some("nexusdocker compose build".into())
+            Some("nexus docker compose build".into())
         );
     }
 
@@ -2139,7 +2139,7 @@ mod tests {
         assert!(matches!(
             classify_command("aws s3 ls"),
             Classification::Supported {
-                rtk_equivalent: "nexusaws",
+                rtk_equivalent: "nexus aws",
                 ..
             }
         ));
@@ -2150,7 +2150,7 @@ mod tests {
         assert!(matches!(
             classify_command("aws ec2 describe-instances"),
             Classification::Supported {
-                rtk_equivalent: "nexusaws",
+                rtk_equivalent: "nexus aws",
                 ..
             }
         ));
@@ -2161,7 +2161,7 @@ mod tests {
         assert!(matches!(
             classify_command("psql -U postgres"),
             Classification::Supported {
-                rtk_equivalent: "nexuspsql",
+                rtk_equivalent: "nexus psql",
                 ..
             }
         ));
@@ -2172,7 +2172,7 @@ mod tests {
         assert!(matches!(
             classify_command("psql postgres://localhost/mydb"),
             Classification::Supported {
-                rtk_equivalent: "nexuspsql",
+                rtk_equivalent: "nexus psql",
                 ..
             }
         ));
@@ -2182,7 +2182,7 @@ mod tests {
     fn test_rewrite_aws() {
         assert_eq!(
             rewrite_command_no_prefixes("aws s3 ls", &[]),
-            Some("nexusaws s3 ls".into())
+            Some("nexus aws s3 ls".into())
         );
     }
 
@@ -2190,7 +2190,7 @@ mod tests {
     fn test_rewrite_aws_ec2() {
         assert_eq!(
             rewrite_command_no_prefixes("aws ec2 describe-instances --region us-east-1", &[]),
-            Some("nexusaws ec2 describe-instances --region us-east-1".into())
+            Some("nexus aws ec2 describe-instances --region us-east-1".into())
         );
     }
 
@@ -2198,7 +2198,7 @@ mod tests {
     fn test_rewrite_psql() {
         assert_eq!(
             rewrite_command_no_prefixes("psql -U postgres -d mydb", &[]),
-            Some("nexuspsql -U postgres -d mydb".into())
+            Some("nexus psql -U postgres -d mydb".into())
         );
     }
 
@@ -2209,7 +2209,7 @@ mod tests {
         assert!(matches!(
             classify_command("ruff check ."),
             Classification::Supported {
-                rtk_equivalent: "nexusruff",
+                rtk_equivalent: "nexus ruff",
                 ..
             }
         ));
@@ -2220,7 +2220,7 @@ mod tests {
         assert!(matches!(
             classify_command("ruff format src/"),
             Classification::Supported {
-                rtk_equivalent: "nexusruff",
+                rtk_equivalent: "nexus ruff",
                 ..
             }
         ));
@@ -2231,7 +2231,7 @@ mod tests {
         assert!(matches!(
             classify_command("pytest tests/"),
             Classification::Supported {
-                rtk_equivalent: "nexuspytest",
+                rtk_equivalent: "nexus pytest",
                 ..
             }
         ));
@@ -2242,7 +2242,7 @@ mod tests {
         assert!(matches!(
             classify_command("python -m pytest tests/"),
             Classification::Supported {
-                rtk_equivalent: "nexuspytest",
+                rtk_equivalent: "nexus pytest",
                 ..
             }
         ));
@@ -2253,7 +2253,7 @@ mod tests {
         assert!(matches!(
             classify_command("pip list"),
             Classification::Supported {
-                rtk_equivalent: "nexuspip",
+                rtk_equivalent: "nexus pip",
                 ..
             }
         ));
@@ -2264,7 +2264,7 @@ mod tests {
         assert!(matches!(
             classify_command("uv pip list"),
             Classification::Supported {
-                rtk_equivalent: "nexuspip",
+                rtk_equivalent: "nexus pip",
                 ..
             }
         ));
@@ -2274,7 +2274,7 @@ mod tests {
     fn test_rewrite_ruff_check() {
         assert_eq!(
             rewrite_command_no_prefixes("ruff check .", &[]),
-            Some("nexusruff check .".into())
+            Some("nexus ruff check .".into())
         );
     }
 
@@ -2282,7 +2282,7 @@ mod tests {
     fn test_rewrite_ruff_format() {
         assert_eq!(
             rewrite_command_no_prefixes("ruff format src/", &[]),
-            Some("nexusruff format src/".into())
+            Some("nexus ruff format src/".into())
         );
     }
 
@@ -2290,7 +2290,7 @@ mod tests {
     fn test_rewrite_pytest() {
         assert_eq!(
             rewrite_command_no_prefixes("pytest tests/", &[]),
-            Some("nexuspytest tests/".into())
+            Some("nexus pytest tests/".into())
         );
     }
 
@@ -2298,7 +2298,7 @@ mod tests {
     fn test_rewrite_python_m_pytest() {
         assert_eq!(
             rewrite_command_no_prefixes("python -m pytest -x tests/", &[]),
-            Some("nexuspytest -x tests/".into())
+            Some("nexus pytest -x tests/".into())
         );
     }
 
@@ -2306,7 +2306,7 @@ mod tests {
     fn test_rewrite_pip_list() {
         assert_eq!(
             rewrite_command_no_prefixes("pip list", &[]),
-            Some("nexuspip list".into())
+            Some("nexus pip list".into())
         );
     }
 
@@ -2314,7 +2314,7 @@ mod tests {
     fn test_rewrite_pip_outdated() {
         assert_eq!(
             rewrite_command_no_prefixes("pip outdated", &[]),
-            Some("nexuspip outdated".into())
+            Some("nexus pip outdated".into())
         );
     }
 
@@ -2322,7 +2322,7 @@ mod tests {
     fn test_rewrite_uv_pip_list() {
         assert_eq!(
             rewrite_command_no_prefixes("uv pip list", &[]),
-            Some("nexuspip list".into())
+            Some("nexus pip list".into())
         );
     }
 
@@ -2333,7 +2333,7 @@ mod tests {
         assert!(matches!(
             classify_command("go test ./..."),
             Classification::Supported {
-                rtk_equivalent: "nexusgo",
+                rtk_equivalent: "nexus go",
                 ..
             }
         ));
@@ -2344,7 +2344,7 @@ mod tests {
         assert!(matches!(
             classify_command("go build ./..."),
             Classification::Supported {
-                rtk_equivalent: "nexusgo",
+                rtk_equivalent: "nexus go",
                 ..
             }
         ));
@@ -2355,7 +2355,7 @@ mod tests {
         assert!(matches!(
             classify_command("go vet ./..."),
             Classification::Supported {
-                rtk_equivalent: "nexusgo",
+                rtk_equivalent: "nexus go",
                 ..
             }
         ));
@@ -2366,7 +2366,7 @@ mod tests {
         assert!(matches!(
             classify_command("golangci-lint run"),
             Classification::Supported {
-                rtk_equivalent: "nexusgolangci-lint run",
+                rtk_equivalent: "nexus golangci-lint run",
                 ..
             }
         ));
@@ -2377,7 +2377,7 @@ mod tests {
         assert!(matches!(
             classify_command("golangci-lint -v run ./..."),
             Classification::Supported {
-                rtk_equivalent: "nexusgolangci-lint run",
+                rtk_equivalent: "nexus golangci-lint run",
                 ..
             }
         ));
@@ -2388,7 +2388,7 @@ mod tests {
         assert!(matches!(
             classify_command("golangci-lint --color never run ./..."),
             Classification::Supported {
-                rtk_equivalent: "nexusgolangci-lint run",
+                rtk_equivalent: "nexus golangci-lint run",
                 ..
             }
         ));
@@ -2399,7 +2399,7 @@ mod tests {
         assert!(matches!(
             classify_command("golangci-lint --color=never run ./..."),
             Classification::Supported {
-                rtk_equivalent: "nexusgolangci-lint run",
+                rtk_equivalent: "nexus golangci-lint run",
                 ..
             }
         ));
@@ -2410,7 +2410,7 @@ mod tests {
         assert!(matches!(
             classify_command("golangci-lint --config=foo.yml run ./..."),
             Classification::Supported {
-                rtk_equivalent: "nexusgolangci-lint run",
+                rtk_equivalent: "nexus golangci-lint run",
                 ..
             }
         ));
@@ -2421,7 +2421,7 @@ mod tests {
         assert!(!matches!(
             classify_command("golangci-lint"),
             Classification::Supported {
-                rtk_equivalent: "nexusgolangci-lint run",
+                rtk_equivalent: "nexus golangci-lint run",
                 ..
             }
         ));
@@ -2432,7 +2432,7 @@ mod tests {
         assert!(!matches!(
             classify_command("golangci-lint version"),
             Classification::Supported {
-                rtk_equivalent: "nexusgolangci-lint run",
+                rtk_equivalent: "nexus golangci-lint run",
                 ..
             }
         ));
@@ -2442,7 +2442,7 @@ mod tests {
     fn test_rewrite_go_test() {
         assert_eq!(
             rewrite_command_no_prefixes("go test ./...", &[]),
-            Some("nexusgo test ./...".into())
+            Some("nexus go test ./...".into())
         );
     }
 
@@ -2450,7 +2450,7 @@ mod tests {
     fn test_rewrite_go_build() {
         assert_eq!(
             rewrite_command_no_prefixes("go build ./...", &[]),
-            Some("nexusgo build ./...".into())
+            Some("nexus go build ./...".into())
         );
     }
 
@@ -2458,7 +2458,7 @@ mod tests {
     fn test_rewrite_go_vet() {
         assert_eq!(
             rewrite_command_no_prefixes("go vet ./...", &[]),
-            Some("nexusgo vet ./...".into())
+            Some("nexus go vet ./...".into())
         );
     }
 
@@ -2466,7 +2466,7 @@ mod tests {
     fn test_rewrite_golangci_lint() {
         assert_eq!(
             rewrite_command_no_prefixes("golangci-lint run ./...", &[]),
-            Some("nexusgolangci-lint run ./...".into())
+            Some("nexus golangci-lint run ./...".into())
         );
     }
 
@@ -2474,7 +2474,7 @@ mod tests {
     fn test_rewrite_golangci_lint_with_flag_before_run() {
         assert_eq!(
             rewrite_command_no_prefixes("golangci-lint -v run ./...", &[]),
-            Some("nexusgolangci-lint -v run ./...".into())
+            Some("nexus golangci-lint -v run ./...".into())
         );
     }
 
@@ -2482,7 +2482,7 @@ mod tests {
     fn test_rewrite_golangci_lint_with_value_flag_before_run() {
         assert_eq!(
             rewrite_command_no_prefixes("golangci-lint --color never run ./...", &[]),
-            Some("nexusgolangci-lint --color never run ./...".into())
+            Some("nexus golangci-lint --color never run ./...".into())
         );
     }
 
@@ -2490,7 +2490,7 @@ mod tests {
     fn test_rewrite_golangci_lint_with_inline_value_flag_before_run() {
         assert_eq!(
             rewrite_command_no_prefixes("golangci-lint --color=never run ./...", &[]),
-            Some("nexusgolangci-lint --color=never run ./...".into())
+            Some("nexus golangci-lint --color=never run ./...".into())
         );
     }
 
@@ -2498,7 +2498,7 @@ mod tests {
     fn test_rewrite_golangci_lint_with_inline_config_flag_before_run() {
         assert_eq!(
             rewrite_command_no_prefixes("golangci-lint --config=foo.yml run ./...", &[]),
-            Some("nexusgolangci-lint --config=foo.yml run ./...".into())
+            Some("nexus golangci-lint --config=foo.yml run ./...".into())
         );
     }
 
@@ -2506,7 +2506,7 @@ mod tests {
     fn test_rewrite_env_prefixed_golangci_lint_with_value_flag_before_run() {
         assert_eq!(
             rewrite_command_no_prefixes("FOO=1 golangci-lint --color never run ./...", &[]),
-            Some("FOO=1 rtk golangci-lint --color never run ./...".into())
+            Some("FOO=1 nexus golangci-lint --color never run ./...".into())
         );
     }
 
@@ -2514,7 +2514,7 @@ mod tests {
     fn test_rewrite_env_prefixed_golangci_lint_with_inline_value_flag_before_run() {
         assert_eq!(
             rewrite_command_no_prefixes("FOO=1 golangci-lint --color=never run ./...", &[]),
-            Some("FOO=1 rtk golangci-lint --color=never run ./...".into())
+            Some("FOO=1 nexus golangci-lint --color=never run ./...".into())
         );
     }
 
@@ -2583,7 +2583,7 @@ mod tests {
                 matches!(
                     classify_command(command),
                     Classification::Supported {
-                        rtk_equivalent: "nexuslint",
+                        rtk_equivalent: "nexus lint",
                         ..
                     }
                 ),
@@ -2641,7 +2641,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(command, &[]),
-                Some("nexuslint".into()),
+                Some("nexus lint".into()),
                 "Failed for command: {}",
                 command
             );
@@ -2687,7 +2687,7 @@ mod tests {
                 matches!(
                     classify_command(command),
                     Classification::Supported {
-                        rtk_equivalent: "nexusjest",
+                        rtk_equivalent: "nexus jest",
                         ..
                     }
                 ),
@@ -2734,7 +2734,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(command, &[]),
-                Some("nexusjest".into()),
+                Some("nexus jest".into()),
                 "Failed for command: {}",
                 command
             );
@@ -2780,7 +2780,7 @@ mod tests {
                 matches!(
                     classify_command(command),
                     Classification::Supported {
-                        rtk_equivalent: "nexusvitest",
+                        rtk_equivalent: "nexus vitest",
                         ..
                     }
                 ),
@@ -2827,7 +2827,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(command, &[]),
-                Some("nexusvitest".into()),
+                Some("nexus vitest".into()),
                 "Failed for command: {}",
                 command
             );
@@ -2858,7 +2858,7 @@ mod tests {
                 matches!(
                     classify_command(format!("{command} migrate dev").as_str()),
                     Classification::Supported {
-                        rtk_equivalent: "nexusprisma",
+                        rtk_equivalent: "nexus prisma",
                         ..
                     }
                 ),
@@ -2890,7 +2890,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(format!("{command} migrate dev").as_str(), &[]),
-                Some("nexusprisma migrate dev".into()),
+                Some("nexus prisma migrate dev".into()),
                 "Failed for command: {}",
                 command
             );
@@ -2919,7 +2919,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(format!("{command} --check src/").as_str(), &[]),
-                Some("nexusprettier --check src/".into()),
+                Some("nexus prettier --check src/".into()),
                 "Failed for command: {}",
                 command
             );
@@ -2941,7 +2941,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(format!("pnpm {command}").as_str(), &[]),
-                Some(format!("nexuspnpm {command}")),
+                Some(format!("nexus pnpm {command}")),
                 "Failed for command: pnpm {}",
                 command
             );
@@ -2954,7 +2954,7 @@ mod tests {
         for command in commands {
             assert_eq!(
                 rewrite_command_no_prefixes(format!("npm {command}").as_str(), &[]),
-                Some(format!("nexusnpm {command}")),
+                Some(format!("nexus npm {command}")),
                 "Failed for bare command: npm {}",
                 command
             );
@@ -2965,11 +2965,11 @@ mod tests {
     fn test_rewrite_npm_with_args() {
         assert_eq!(
             rewrite_command_no_prefixes("npm run test", &[]),
-            Some("nexusnpm run test".to_string()),
+            Some("nexus npm run test".to_string()),
         );
         assert_eq!(
             rewrite_command_no_prefixes("npm exec vitest", &[]),
-            Some("nexusvitest".to_string()),
+            Some("nexus vitest".to_string()),
         );
     }
 
@@ -2977,7 +2977,7 @@ mod tests {
     fn test_rewrite_npx() {
         assert_eq!(
             rewrite_command_no_prefixes("npx svgo", &[]),
-            Some("nexusnpx svgo".to_string()),
+            Some("nexus npx svgo".to_string()),
         );
     }
 
@@ -2988,7 +2988,7 @@ mod tests {
         assert!(matches!(
             classify_command("./gradlew assembleDebug"),
             Classification::Supported {
-                rtk_equivalent: "nexusgradlew",
+                rtk_equivalent: "nexus gradlew",
                 ..
             }
         ));
@@ -2999,7 +2999,7 @@ mod tests {
         assert!(matches!(
             classify_command("gradlew build"),
             Classification::Supported {
-                rtk_equivalent: "nexusgradlew",
+                rtk_equivalent: "nexus gradlew",
                 ..
             }
         ));
@@ -3010,7 +3010,7 @@ mod tests {
         assert!(matches!(
             classify_command("gradlew.bat clean"),
             Classification::Supported {
-                rtk_equivalent: "nexusgradlew",
+                rtk_equivalent: "nexus gradlew",
                 ..
             }
         ));
@@ -3021,7 +3021,7 @@ mod tests {
         assert!(matches!(
             classify_command("gradle build"),
             Classification::Supported {
-                rtk_equivalent: "nexusgradlew",
+                rtk_equivalent: "nexus gradlew",
                 ..
             }
         ));
@@ -3031,7 +3031,7 @@ mod tests {
     fn test_rewrite_gradlew() {
         assert_eq!(
             rewrite_command_no_prefixes("./gradlew assembleDebug", &[]),
-            Some("nexusgradlew assembleDebug".into())
+            Some("nexus gradlew assembleDebug".into())
         );
     }
 
@@ -3039,7 +3039,7 @@ mod tests {
     fn test_rewrite_gradlew_no_dot_slash() {
         assert_eq!(
             rewrite_command_no_prefixes("gradlew build", &[]),
-            Some("nexusgradlew build".into())
+            Some("nexus gradlew build".into())
         );
     }
 
@@ -3047,7 +3047,7 @@ mod tests {
     fn test_rewrite_gradlew_bat() {
         assert_eq!(
             rewrite_command_no_prefixes("gradlew.bat clean", &[]),
-            Some("nexusgradlew clean".into())
+            Some("nexus gradlew clean".into())
         );
     }
 
@@ -3055,7 +3055,7 @@ mod tests {
     fn test_rewrite_gradle() {
         assert_eq!(
             rewrite_command_no_prefixes("gradle build", &[]),
-            Some("nexusgradlew build".into())
+            Some("nexus gradlew build".into())
         );
     }
 
@@ -3064,7 +3064,7 @@ mod tests {
         assert_eq!(
             classify_command("./gradlew test"),
             Classification::Supported {
-                rtk_equivalent: "nexusgradlew",
+                rtk_equivalent: "nexus gradlew",
                 category: "Build",
                 estimated_savings_pct: 90.0,
                 status: RtkStatus::Existing,
@@ -3079,7 +3079,7 @@ mod tests {
         // `||` fallback: left rewritten, right rewritten
         assert_eq!(
             rewrite_command_no_prefixes("cargo test || cargo build", &[]),
-            Some("nexuscargo test || rtk cargo build".into())
+            Some("nexus cargo test || nexus cargo build".into())
         );
     }
 
@@ -3087,7 +3087,7 @@ mod tests {
     fn test_rewrite_compound_semicolon() {
         assert_eq!(
             rewrite_command_no_prefixes("git status; cargo test", &[]),
-            Some("nexusgit status; rtk cargo test".into())
+            Some("nexus git status; nexus cargo test".into())
         );
     }
 
@@ -3096,7 +3096,7 @@ mod tests {
         // Pipe: rewrite first segment only, pass through rest unchanged
         assert_eq!(
             rewrite_command_no_prefixes("cargo test | grep FAILED", &[]),
-            Some("nexuscargo test | grep FAILED".into())
+            Some("nexus cargo test | grep FAILED".into())
         );
     }
 
@@ -3104,7 +3104,7 @@ mod tests {
     fn test_rewrite_compound_pipe_git_grep() {
         assert_eq!(
             rewrite_command_no_prefixes("git log -10 | grep feat", &[]),
-            Some("nexusgit log -10 | grep feat".into())
+            Some("nexus git log -10 | grep feat".into())
         );
     }
 
@@ -3116,7 +3116,7 @@ mod tests {
                 &[]
             ),
             Some(
-                "nexuscargo fmt --all && rtk cargo clippy && rtk cargo test && rtk git status"
+                "nexus cargo fmt --all && nexus cargo clippy && nexus cargo test && nexus git status"
                     .into()
             )
         );
@@ -3127,7 +3127,7 @@ mod tests {
         // unsupported segments stay raw
         assert_eq!(
             rewrite_command_no_prefixes("cargo test && htop", &[]),
-            Some("nexuscargo test && htop".into())
+            Some("nexus cargo test && htop".into())
         );
     }
 
@@ -3143,7 +3143,7 @@ mod tests {
     fn test_rewrite_sudo_docker() {
         assert_eq!(
             rewrite_command_no_prefixes("sudo docker ps", &[]),
-            Some("sudo rtk docker ps".into())
+            Some("sudo nexus docker ps".into())
         );
     }
 
@@ -3151,7 +3151,7 @@ mod tests {
     fn test_rewrite_env_var_prefix() {
         assert_eq!(
             rewrite_command_no_prefixes("GIT_SSH_COMMAND=ssh git push origin main", &[]),
-            Some("GIT_SSH_COMMAND=ssh rtk git push origin main".into())
+            Some("GIT_SSH_COMMAND=ssh nexus git push origin main".into())
         );
     }
 
@@ -3161,7 +3161,7 @@ mod tests {
     fn test_rewrite_find_with_flags() {
         assert_eq!(
             rewrite_command_no_prefixes("find . -name '*.rs' -type f", &[]),
-            Some("nexusfind . -name '*.rs' -type f".into())
+            Some("nexus find . -name '*.rs' -type f".into())
         );
     }
 
@@ -3176,7 +3176,7 @@ mod tests {
             assert!(!rule.rtk_cmd.is_empty(), "Rule with empty rtk_cmd found");
             assert!(
                 rule.rtk_cmd.starts_with("nexus"),
-                "rtk_cmd '{}' must start with 'rtk '",
+                "rtk_cmd '{}' must start with 'nexus '",
                 rule.rtk_cmd
             );
             assert!(
@@ -3203,7 +3203,7 @@ mod tests {
         let excluded = vec!["curl".to_string()];
         assert_eq!(
             rewrite_command_no_prefixes("git status", &excluded),
-            Some("nexusgit status".into())
+            Some("nexus git status".into())
         );
     }
 
@@ -3219,7 +3219,7 @@ mod tests {
         let excluded = vec!["curl".to_string()];
         assert_eq!(
             rewrite_command_no_prefixes("git status && curl https://api.example.com", &excluded),
-            Some("nexusgit status && curl https://api.example.com".into())
+            Some("nexus git status && curl https://api.example.com".into())
         );
     }
 
@@ -3331,7 +3331,7 @@ mod tests {
     fn test_rewrite_gh_without_json_still_works() {
         assert_eq!(
             rewrite_command_no_prefixes("gh pr list", &[]),
-            Some("nexusgh pr list".into())
+            Some("nexus gh pr list".into())
         );
     }
 
@@ -3347,7 +3347,7 @@ mod tests {
             "RTK_DISABLED=true git log --oneline"
         ));
         assert!(!cmd_has_rtk_disabled_prefix("git status"));
-        assert!(!cmd_has_rtk_disabled_prefix("nexusgit status"));
+        assert!(!cmd_has_rtk_disabled_prefix("nexus git status"));
         assert!(!cmd_has_rtk_disabled_prefix("SOME_VAR=1 git status"));
     }
 
@@ -3371,7 +3371,7 @@ mod tests {
         assert_eq!(
             classify_command("/usr/bin/grep -rni pattern"),
             Classification::Supported {
-                rtk_equivalent: "nexusgrep",
+                rtk_equivalent: "nexus grep",
                 category: "Files",
                 estimated_savings_pct: 75.0,
                 status: RtkStatus::Existing,
@@ -3384,7 +3384,7 @@ mod tests {
         assert_eq!(
             classify_command("/bin/ls -la"),
             Classification::Supported {
-                rtk_equivalent: "nexusls",
+                rtk_equivalent: "nexus ls",
                 category: "Files",
                 estimated_savings_pct: 65.0,
                 status: RtkStatus::Existing,
@@ -3397,7 +3397,7 @@ mod tests {
         assert_eq!(
             classify_command("/usr/local/bin/git status"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -3411,7 +3411,7 @@ mod tests {
         assert_eq!(
             classify_command("/usr/bin/find ."),
             Classification::Supported {
-                rtk_equivalent: "nexusfind",
+                rtk_equivalent: "nexus find",
                 category: "Files",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -3434,7 +3434,7 @@ mod tests {
         assert_eq!(
             classify_command("git -C /tmp status"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -3447,7 +3447,7 @@ mod tests {
         assert_eq!(
             classify_command("git --no-pager log -5"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -3460,7 +3460,7 @@ mod tests {
         assert_eq!(
             classify_command("git --git-dir /tmp/.git status"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -3472,7 +3472,7 @@ mod tests {
     fn test_rewrite_git_dash_c() {
         assert_eq!(
             rewrite_command_no_prefixes("git -C /tmp status", &[]),
-            Some("nexusgit -C /tmp status".to_string())
+            Some("nexus git -C /tmp status".to_string())
         );
     }
 
@@ -3480,7 +3480,7 @@ mod tests {
     fn test_rewrite_git_no_pager() {
         assert_eq!(
             rewrite_command_no_prefixes("git --no-pager log -5", &[]),
-            Some("nexusgit --no-pager log -5".to_string())
+            Some("nexus git --no-pager log -5".to_string())
         );
     }
 
@@ -3526,7 +3526,7 @@ mod tests {
         assert_eq!(
             classify_command("wc -l src/main.rs"),
             Classification::Supported {
-                rtk_equivalent: "nexuswc",
+                rtk_equivalent: "nexus wc",
                 category: "Files",
                 estimated_savings_pct: 60.0,
                 status: RtkStatus::Existing,
@@ -3539,7 +3539,7 @@ mod tests {
         assert_eq!(
             classify_command("wc src/*.rs"),
             Classification::Supported {
-                rtk_equivalent: "nexuswc",
+                rtk_equivalent: "nexus wc",
                 category: "Files",
                 estimated_savings_pct: 60.0,
                 status: RtkStatus::Existing,
@@ -3551,7 +3551,7 @@ mod tests {
     fn test_rewrite_wc() {
         assert_eq!(
             rewrite_command_no_prefixes("wc -l src/main.rs", &[]),
-            Some("nexuswc -l src/main.rs".into())
+            Some("nexus wc -l src/main.rs".into())
         );
     }
 
@@ -3559,7 +3559,7 @@ mod tests {
     fn test_rewrite_wc_multi_file() {
         assert_eq!(
             rewrite_command_no_prefixes("wc src/*.rs", &[]),
-            Some("nexuswc src/*.rs".into())
+            Some("nexus wc src/*.rs".into())
         );
     }
 
@@ -3568,7 +3568,7 @@ mod tests {
         assert_eq!(
             classify_command("git log $(git rev-parse HEAD~1)"),
             Classification::Supported {
-                rtk_equivalent: "nexusgit",
+                rtk_equivalent: "nexus git",
                 category: "Git",
                 estimated_savings_pct: 70.0,
                 status: RtkStatus::Existing,
@@ -3580,7 +3580,7 @@ mod tests {
     fn test_rewrite_command_substitution_passthrough() {
         assert_eq!(
             rewrite_command_no_prefixes("git log $(git rev-parse HEAD~1)", &[]),
-            Some("nexusgit log $(git rev-parse HEAD~1)".into())
+            Some("nexus git log $(git rev-parse HEAD~1)".into())
         );
     }
 
@@ -3596,7 +3596,7 @@ mod tests {
     fn test_shell_prefix_noglob() {
         assert_eq!(
             rewrite_command_no_prefixes("noglob git status", &[]),
-            Some("noglob rtk git status".into())
+            Some("noglob nexus git status".into())
         );
     }
 
@@ -3604,7 +3604,7 @@ mod tests {
     fn test_shell_prefix_command() {
         assert_eq!(
             rewrite_command_no_prefixes("command git status", &[]),
-            Some("command rtk git status".into())
+            Some("command nexus git status".into())
         );
     }
 
@@ -3612,15 +3612,15 @@ mod tests {
     fn test_shell_prefix_builtin_exec_nocorrect() {
         assert_eq!(
             rewrite_command_no_prefixes("builtin git status", &[]),
-            Some("builtin rtk git status".into())
+            Some("builtin nexus git status".into())
         );
         assert_eq!(
             rewrite_command_no_prefixes("exec git status", &[]),
-            Some("exec rtk git status".into())
+            Some("exec nexus git status".into())
         );
         assert_eq!(
             rewrite_command_no_prefixes("nocorrect git status", &[]),
-            Some("nocorrect rtk git status".into())
+            Some("nocorrect nexus git status".into())
         );
     }
 
@@ -3639,7 +3639,7 @@ mod tests {
         let prefixes = vec!["shadowenv exec --".to_string()];
         assert_eq!(
             super::rewrite_command("shadowenv exec -- git status", &[], &prefixes),
-            Some("shadowenv exec -- rtk git status".into())
+            Some("shadowenv exec -- nexus git status".into())
         );
     }
 
@@ -3648,7 +3648,7 @@ mod tests {
         let prefixes = vec!["shadowenv exec --".to_string()];
         assert_eq!(
             super::rewrite_command("shadowenv exec -- cargo test", &[], &prefixes),
-            Some("shadowenv exec -- rtk cargo test".into())
+            Some("shadowenv exec -- nexus cargo test".into())
         );
     }
 
@@ -3677,7 +3677,7 @@ mod tests {
         let prefixes = vec!["shadowenv exec --".to_string()];
         assert_eq!(
             super::rewrite_command("noglob shadowenv exec -- git status", &[], &prefixes),
-            Some("noglob shadowenv exec -- rtk git status".into())
+            Some("noglob shadowenv exec -- nexus git status".into())
         );
     }
 
@@ -3686,7 +3686,7 @@ mod tests {
         let prefixes = vec!["bundle exec".to_string()];
         assert_eq!(
             super::rewrite_command("RAILS_ENV=test bundle exec git status", &[], &prefixes),
-            Some("RAILS_ENV=test bundle exec rtk git status".into())
+            Some("RAILS_ENV=test bundle exec nexus git status".into())
         );
     }
 
@@ -3694,7 +3694,7 @@ mod tests {
     fn test_env_prefix_composed_with_builtin() {
         assert_eq!(
             rewrite_command_no_prefixes("sudo noglob git status", &[]),
-            Some("sudo noglob rtk git status".into())
+            Some("sudo noglob nexus git status".into())
         );
     }
 
@@ -3703,7 +3703,7 @@ mod tests {
         let prefixes = vec!["shadowenv exec --".to_string(), "direnv exec .".to_string()];
         assert_eq!(
             super::rewrite_command("direnv exec . git status", &[], &prefixes),
-            Some("direnv exec . rtk git status".into())
+            Some("direnv exec . nexus git status".into())
         );
     }
 
@@ -3726,7 +3726,7 @@ mod tests {
         let prefixes = vec!["docker".to_string(), "docker exec app".to_string()];
         assert_eq!(
             super::rewrite_command("docker exec app git status", &[], &prefixes),
-            Some("docker exec app rtk git status".into())
+            Some("docker exec app nexus git status".into())
         );
     }
 
@@ -3755,7 +3755,7 @@ mod tests {
         let prefixes = vec!["".to_string(), "   ".to_string()];
         assert_eq!(
             super::rewrite_command("git status", &[], &prefixes),
-            Some("nexusgit status".into())
+            Some("nexus git status".into())
         );
     }
 
@@ -3769,7 +3769,7 @@ mod tests {
                 &[],
                 &prefixes
             ),
-            Some("shadowenv exec -- rtk git status && shadowenv exec -- rtk cargo test".into())
+            Some("shadowenv exec -- nexus git status && shadowenv exec -- nexus cargo test".into())
         );
     }
 
@@ -3804,7 +3804,7 @@ mod tests {
     fn test_python3_m_pytest() {
         assert_eq!(
             rewrite_command_no_prefixes("python3 -m pytest tests/", &[]),
-            Some("nexuspytest tests/".into())
+            Some("nexus pytest tests/".into())
         );
     }
 
@@ -3812,7 +3812,7 @@ mod tests {
     fn test_pip_show() {
         assert_eq!(
             rewrite_command_no_prefixes("pip show flask", &[]),
-            Some("nexuspip show flask".into())
+            Some("nexus pip show flask".into())
         );
     }
 
@@ -3820,7 +3820,7 @@ mod tests {
     fn test_gt_graphite() {
         assert_eq!(
             rewrite_command_no_prefixes("gt log", &[]),
-            Some("nexusgt log".into())
+            Some("nexus gt log".into())
         );
     }
 
@@ -3838,7 +3838,7 @@ mod tests {
     fn test_rewrite_pipe_then_and() {
         assert_eq!(
             rewrite_command_no_prefixes("git log | head -5 && git stash", &[]),
-            Some("nexusgit log | head -5 && rtk git stash".into())
+            Some("nexus git log | head -5 && nexus git stash".into())
         );
     }
 
@@ -3846,7 +3846,7 @@ mod tests {
     fn test_rewrite_pipe_then_semicolon() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test | head; git status", &[]),
-            Some("nexuscargo test | head; rtk git status".into())
+            Some("nexus cargo test | head; nexus git status".into())
         );
     }
 
@@ -3854,7 +3854,7 @@ mod tests {
     fn test_rewrite_pipe_then_or() {
         assert_eq!(
             rewrite_command_no_prefixes("cargo test | grep FAIL || git stash", &[]),
-            Some("nexuscargo test | grep FAIL || rtk git stash".into())
+            Some("nexus cargo test | grep FAIL || nexus git stash".into())
         );
     }
 
@@ -3865,7 +3865,7 @@ mod tests {
                 "RUST_BACKTRACE=1 cargo test 2>&1 | grep FAILED && git stash",
                 &[]
             ),
-            Some("RUST_BACKTRACE=1 rtk cargo test 2>&1 | grep FAILED && rtk git stash".into())
+            Some("RUST_BACKTRACE=1 nexus cargo test 2>&1 | grep FAILED && nexus git stash".into())
         );
     }
 
@@ -3873,7 +3873,7 @@ mod tests {
     fn test_rewrite_and_then_pipe() {
         assert_eq!(
             rewrite_command_no_prefixes("git status && cargo test | grep FAIL", &[]),
-            Some("nexusgit status && rtk cargo test | grep FAIL".into())
+            Some("nexus git status && nexus cargo test | grep FAIL".into())
         );
     }
 
@@ -3881,7 +3881,7 @@ mod tests {
     fn test_rewrite_multi_pipe_then_and() {
         assert_eq!(
             rewrite_command_no_prefixes("git log | head | tail && git status", &[]),
-            Some("nexusgit log | head | tail && rtk git status".into())
+            Some("nexus git log | head | tail && nexus git status".into())
         );
     }
 }

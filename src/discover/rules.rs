@@ -915,6 +915,7 @@ pub const IGNORED_PREFIXES: &[&str] = &[
     "node -e",
     "ruby -e",
     "rtk ",
+    "nexus ",
     "pwd",
     "bash ",
     "sh ",

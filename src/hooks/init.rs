@@ -75,9 +75,9 @@ const GEMINI_MD: &str = "GEMINI.md";
 const RTK_BLOCK_START: &str = "<!-- nexus-instructions";
 const RTK_BLOCK_END: &str = "<!-- /nexus-instructions -->";
 #[allow(dead_code)]
-const LEGACY_RTK_BLOCK_START: &str = "<!-- rtk-instructions";
+const LEGACY_RTK_BLOCK_START: &str = "<!-- nexus-instructions";
 #[allow(dead_code)]
-const LEGACY_RTK_BLOCK_END: &str = "<!-- /rtk-instructions -->";
+const LEGACY_RTK_BLOCK_END: &str = "<!-- /nexus-instructions -->";
 
 /// Control flow for settings.json patching
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -114,7 +114,7 @@ fn print_dry_run_footer() {
 }
 
 // Legacy full instructions for backward compatibility (--claude-md mode)
-const RTK_INSTRUCTIONS: &str = r##"<!-- rtk-instructions v2 -->
+const RTK_INSTRUCTIONS: &str = r##"<!-- nexus-instructions v2 -->
 # RTK (Rust Token Killer) - Token-Optimized Commands
 
 ## Golden Rule
@@ -127,114 +127,114 @@ const RTK_INSTRUCTIONS: &str = r##"<!-- rtk-instructions v2 -->
 git add . && git commit -m "msg" && git push
 
 # ✅ Correct
-rtk git add . && rtk git commit -m "msg" && rtk git push
+nexus git add . && nexus git commit -m "msg" && nexus git push
 ```
 
 ## RTK Commands by Workflow
 
 ### Build & Compile (80-90% savings)
 ```bash
-rtk cargo build         # Cargo build output
-rtk cargo check         # Cargo check output
-rtk cargo clippy        # Clippy warnings grouped by file (80%)
-rtk tsc                 # TypeScript errors grouped by file/code (83%)
-rtk lint                # ESLint/Biome violations grouped (84%)
-rtk prettier --check    # Files needing format only (70%)
-rtk next build          # Next.js build with route metrics (87%)
+nexus cargo build         # Cargo build output
+nexus cargo check         # Cargo check output
+nexus cargo clippy        # Clippy warnings grouped by file (80%)
+nexus tsc                 # TypeScript errors grouped by file/code (83%)
+nexus lint                # ESLint/Biome violations grouped (84%)
+nexus prettier --check    # Files needing format only (70%)
+nexus next build          # Next.js build with route metrics (87%)
 ```
 
 ### Test (60-99% savings)
 ```bash
-rtk cargo test          # Cargo test failures only (90%)
-rtk go test             # Go test failures only (90%)
-rtk jest                # Jest failures only (99.5%)
-rtk vitest              # Vitest failures only (99.5%)
-rtk playwright test     # Playwright failures only (94%)
-rtk pytest              # Python test failures only (90%)
-rtk rake test           # Ruby test failures only (90%)
-rtk rspec               # RSpec test failures only (60%)
-rtk test <cmd>          # Generic test wrapper - failures only
+nexus cargo test          # Cargo test failures only (90%)
+nexus go test             # Go test failures only (90%)
+nexus jest                # Jest failures only (99.5%)
+nexus vitest              # Vitest failures only (99.5%)
+nexus playwright test     # Playwright failures only (94%)
+nexus pytest              # Python test failures only (90%)
+nexus rake test           # Ruby test failures only (90%)
+nexus rspec               # RSpec test failures only (60%)
+nexus test <cmd>          # Generic test wrapper - failures only
 ```
 
 ### Git (59-80% savings)
 ```bash
-rtk git status          # Compact status
-rtk git log             # Compact log (works with all git flags)
-rtk git diff            # Compact diff (80%)
-rtk git show            # Compact show (80%)
-rtk git add             # Ultra-compact confirmations (59%)
-rtk git commit          # Ultra-compact confirmations (59%)
-rtk git push            # Ultra-compact confirmations
-rtk git pull            # Ultra-compact confirmations
-rtk git branch          # Compact branch list
-rtk git fetch           # Compact fetch
-rtk git stash           # Compact stash
-rtk git worktree        # Compact worktree
+nexus git status          # Compact status
+nexus git log             # Compact log (works with all git flags)
+nexus git diff            # Compact diff (80%)
+nexus git show            # Compact show (80%)
+nexus git add             # Ultra-compact confirmations (59%)
+nexus git commit          # Ultra-compact confirmations (59%)
+nexus git push            # Ultra-compact confirmations
+nexus git pull            # Ultra-compact confirmations
+nexus git branch          # Compact branch list
+nexus git fetch           # Compact fetch
+nexus git stash           # Compact stash
+nexus git worktree        # Compact worktree
 ```
 
 Note: Git passthrough works for ALL subcommands, even those not explicitly listed.
 
 ### GitHub (26-87% savings)
 ```bash
-rtk gh pr view <num>    # Compact PR view (87%)
-rtk gh pr checks        # Compact PR checks (79%)
-rtk gh run list         # Compact workflow runs (82%)
-rtk gh issue list       # Compact issue list (80%)
-rtk gh api              # Compact API responses (26%)
+nexus gh pr view <num>    # Compact PR view (87%)
+nexus gh pr checks        # Compact PR checks (79%)
+nexus gh run list         # Compact workflow runs (82%)
+nexus gh issue list       # Compact issue list (80%)
+nexus gh api              # Compact API responses (26%)
 ```
 
 ### JavaScript/TypeScript Tooling (70-90% savings)
 ```bash
-rtk pnpm list           # Compact dependency tree (70%)
-rtk pnpm outdated       # Compact outdated packages (80%)
-rtk pnpm install        # Compact install output (90%)
-rtk npm run <script>    # Compact npm script output
-rtk npx <cmd>           # Compact npx command output
-rtk prisma              # Prisma without ASCII art (88%)
+nexus pnpm list           # Compact dependency tree (70%)
+nexus pnpm outdated       # Compact outdated packages (80%)
+nexus pnpm install        # Compact install output (90%)
+nexus npm run <script>    # Compact npm script output
+nexus npx <cmd>           # Compact npx command output
+nexus prisma              # Prisma without ASCII art (88%)
 ```
 
 ### Files & Search (60-75% savings)
 ```bash
-rtk ls <path>           # Tree format, compact (65%)
-rtk read <file>         # Code reading with filtering (60%)
-rtk grep <pattern>      # Search grouped by file (75%). Format flags (-c, -l, -L, -o, -Z) run raw.
-rtk find <pattern>      # Find grouped by directory (70%)
+nexus ls <path>           # Tree format, compact (65%)
+nexus read <file>         # Code reading with filtering (60%)
+nexus grep <pattern>      # Search grouped by file (75%). Format flags (-c, -l, -L, -o, -Z) run raw.
+nexus find <pattern>      # Find grouped by directory (70%)
 ```
 
 ### Analysis & Debug (70-90% savings)
 ```bash
-rtk err <cmd>           # Filter errors only from any command
-rtk log <file>          # Deduplicated logs with counts
-rtk json <file>         # JSON structure without values
-rtk deps                # Dependency overview
-rtk env                 # Environment variables compact
-rtk summary <cmd>       # Smart summary of command output
-rtk diff                # Ultra-compact diffs
+nexus err <cmd>           # Filter errors only from any command
+nexus log <file>          # Deduplicated logs with counts
+nexus json <file>         # JSON structure without values
+nexus deps                # Dependency overview
+nexus env                 # Environment variables compact
+nexus summary <cmd>       # Smart summary of command output
+nexus diff                # Ultra-compact diffs
 ```
 
 ### Infrastructure (85% savings)
 ```bash
-rtk docker ps           # Compact container list
-rtk docker images       # Compact image list
-rtk docker logs <c>     # Deduplicated logs
-rtk kubectl get         # Compact resource list
-rtk kubectl logs        # Deduplicated pod logs
+nexus docker ps           # Compact container list
+nexus docker images       # Compact image list
+nexus docker logs <c>     # Deduplicated logs
+nexus kubectl get         # Compact resource list
+nexus kubectl logs        # Deduplicated pod logs
 ```
 
 ### Network (65-70% savings)
 ```bash
-rtk curl <url>          # Compact HTTP responses (70%)
-rtk wget <url>          # Compact download output (65%)
+nexus curl <url>          # Compact HTTP responses (70%)
+nexus wget <url>          # Compact download output (65%)
 ```
 
 ### Meta Commands
 ```bash
-rtk gain                # View token savings statistics
-rtk gain --history      # View command history with savings
-rtk discover            # Analyze Claude Code sessions for missed RTK usage
-rtk proxy <cmd>         # Run command without filtering (for debugging)
-rtk init                # Add RTK instructions to CLAUDE.md
-rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
+nexus gain                # View token savings statistics
+nexus gain --history      # View command history with savings
+nexus discover            # Analyze Claude Code sessions for missed RTK usage
+nexus proxy <cmd>         # Run command without filtering (for debugging)
+nexus init                # Add RTK instructions to CLAUDE.md
+nexus init --global       # Add RTK to ~/.claude/CLAUDE.md
 ```
 
 ## Token Savings Overview
@@ -251,7 +251,7 @@ rtk init --global       # Add RTK to ~/.claude/CLAUDE.md
 | Network | curl, wget | 65-70% |
 
 Overall average: **60-90% token reduction** on common development operations.
-<!-- /rtk-instructions -->
+<!-- /nexus-instructions -->
 "##;
 
 /// Main entry point for `nexus init`
@@ -291,15 +291,15 @@ pub fn run(
     } else {
         // Validation: Global-only features
         if install_opencode && !global {
-            anyhow::bail!("OpenCode plugin is global-only. Use: rtk init -g --opencode");
+            anyhow::bail!("OpenCode plugin is global-only. Use: nexus init -g --opencode");
         }
 
         if install_cursor && !global {
-            anyhow::bail!("Cursor hooks are global-only. Use: rtk init -g --agent cursor");
+            anyhow::bail!("Cursor hooks are global-only. Use: nexus init -g --agent cursor");
         }
 
         if install_windsurf && !global {
-            anyhow::bail!("Windsurf support is global-only. Use: rtk init -g --agent windsurf");
+            anyhow::bail!("Windsurf support is global-only. Use: nexus init -g --agent windsurf");
         }
 
         if install_windsurf {
@@ -1050,7 +1050,7 @@ fn insert_hook_entry(root: &mut serde_json::Value, hook_command: &str) -> Result
 }
 
 /// Check if RTK hook is already present in settings.json
-/// Matches on legacy rtk-rewrite.sh path OR new `rtk hook claude` command
+/// Matches on legacy rtk-rewrite.sh path OR new `nexus hook claude` command
 fn hook_already_present(root: &serde_json::Value, hook_command: &str) -> bool {
     let pre_tool_use_array = match root
         .get("hooks")
@@ -1165,7 +1165,7 @@ fn run_default_mode(
 
 /// Migrate old hook script to new binary command.
 /// Deletes `~/.claude/hooks/rtk-rewrite.sh` and `.rtk-hook.sha256` if present,
-/// and removes the stale settings.json entry so the new `rtk hook claude` entry
+/// and removes the stale settings.json entry so the new `nexus hook claude` entry
 /// can be registered.
 fn migrate_old_hook_script(ctx: InitContext) {
     let InitContext { verbose, dry_run } = ctx;
@@ -1228,7 +1228,7 @@ fn migrate_old_hook_script(ctx: InitContext) {
 }
 
 /// Remove only legacy `rtk-rewrite.sh` entries from settings.json.
-/// Preserves any existing `rtk hook claude` entries (new format).
+/// Preserves any existing `nexus hook claude` entries (new format).
 fn remove_legacy_settings_entries(ctx: InitContext) -> Result<()> {
     let InitContext { verbose, dry_run } = ctx;
     let claude_dir = resolve_claude_dir()?;
@@ -1276,7 +1276,7 @@ fn remove_legacy_settings_entries(ctx: InitContext) -> Result<()> {
 
 /// Remove only legacy `rtk-rewrite.sh` hook entries from a parsed settings.json.
 /// Returns true if any entries were removed.
-/// Does NOT remove `rtk hook claude` entries — those are the new format.
+/// Does NOT remove `nexus hook claude` entries — those are the new format.
 fn remove_legacy_hook_entries_from_json(root: &mut serde_json::Value) -> bool {
     let pre_tool_use_array = match root
         .get_mut("hooks")
@@ -1459,7 +1459,7 @@ fn run_claude_md_mode(global: bool, install_opencode: bool, ctx: InitContext) ->
     }
 
     if verbose > 0 {
-        eprintln!("Writing rtk instructions to: {}", path.display());
+        eprintln!("Writing nexus instructions to: {}", path.display());
     }
 
     let recovery_cmd = if global {
@@ -1471,7 +1471,7 @@ fn run_claude_md_mode(global: bool, install_opencode: bool, ctx: InitContext) ->
     let action = write_rtk_block(
         &path,
         RTK_INSTRUCTIONS,
-        "rtk instructions",
+        "nexus instructions",
         recovery_cmd,
         ctx,
     )?;
@@ -1492,10 +1492,10 @@ fn run_claude_md_mode(global: bool, install_opencode: bool, ctx: InitContext) ->
             }
         }
         if !dry_run {
-            println!("   Claude Code will now use rtk in all sessions");
+            println!("   Claude Code will now use nexus in all sessions");
         }
     } else if !dry_run {
-        println!("   Claude Code will use rtk in this project");
+        println!("   Claude Code will use nexus in this project");
     }
 
     Ok(())
@@ -1548,7 +1548,7 @@ fn run_cline_mode(ctx: InitContext) -> Result<()> {
         }
     }
     if !dry_run {
-        println!("  Cline will now use rtk commands for token savings.");
+        println!("  Cline will now use nexus commands for token savings.");
         println!("  Test with: git status\n");
     }
 
@@ -1593,7 +1593,7 @@ fn run_windsurf_mode(ctx: InitContext) -> Result<()> {
         }
     }
     if !dry_run {
-        println!("  Cascade will now use rtk commands for token savings.");
+        println!("  Cascade will now use nexus commands for token savings.");
         println!("  Restart Windsurf. Test with: git status\n");
     }
 
@@ -1651,7 +1651,7 @@ fn run_kilocode_mode_at(base_dir: &Path, ctx: InitContext) -> Result<()> {
     if dry_run {
         print_dry_run_footer();
     } else {
-        println!("  Kilo Code will now use rtk commands for token savings.");
+        println!("  Kilo Code will now use nexus commands for token savings.");
         println!("  Test with: git status\n");
     }
 
@@ -1708,7 +1708,7 @@ fn run_antigravity_mode_at(base_dir: &Path, ctx: InitContext) -> Result<()> {
     if dry_run {
         print_dry_run_footer();
     } else {
-        println!("  Antigravity will now use rtk commands for token savings.");
+        println!("  Antigravity will now use nexus commands for token savings.");
         println!("  Test with: git status\n");
     }
 
@@ -1866,9 +1866,9 @@ fn unpatch_hermes_config(existing: &str) -> String {
     rewrite_hermes_config(existing, false)
 }
 
-fn rewrite_hermes_config(existing: &str, add_rtk: bool) -> String {
+fn rewrite_hermes_config(existing: &str, add_nexus: bool) -> String {
     if existing.trim().is_empty() {
-        return if add_rtk {
+        return if add_nexus {
             hermes_plugins_block()
         } else {
             String::new()
@@ -1877,7 +1877,7 @@ fn rewrite_hermes_config(existing: &str, add_rtk: bool) -> String {
 
     let mut lines = split_yaml_lines(existing);
     let Some(plugins_idx) = find_yaml_key_line(&lines, "plugins", 0, None) else {
-        return if add_rtk {
+        return if add_nexus {
             append_hermes_plugins_block(existing)
         } else {
             existing.to_string()
@@ -1892,7 +1892,7 @@ fn rewrite_hermes_config(existing: &str, add_rtk: bool) -> String {
         plugins_idx + 1,
         Some((plugins_end, plugins_indent)),
     ) else {
-        if add_rtk {
+        if add_nexus {
             let (enabled_indent, item_indent) =
                 hermes_missing_enabled_indents(&lines, plugins_idx, plugins_end, plugins_indent);
             let enabled_block = format!(
@@ -1908,11 +1908,11 @@ fn rewrite_hermes_config(existing: &str, add_rtk: bool) -> String {
     };
 
     if yaml_line_without_ending(&lines[enabled_idx]).contains('[') {
-        rewrite_inline_hermes_enabled(&mut lines, enabled_idx, add_rtk);
+        rewrite_inline_hermes_enabled(&mut lines, enabled_idx, add_nexus);
         return lines.concat();
     }
 
-    rewrite_block_hermes_enabled(&mut lines, enabled_idx, add_rtk);
+    rewrite_block_hermes_enabled(&mut lines, enabled_idx, add_nexus);
     lines.concat()
 }
 
@@ -1993,7 +1993,7 @@ fn yaml_block_end(lines: &[String], start: usize, parent_indent: usize) -> usize
         .unwrap_or(lines.len())
 }
 
-fn rewrite_inline_hermes_enabled(lines: &mut [String], enabled_idx: usize, add_rtk: bool) {
+fn rewrite_inline_hermes_enabled(lines: &mut [String], enabled_idx: usize, add_nexus: bool) {
     let line_ending = yaml_line_ending(&lines[enabled_idx]);
     let raw = yaml_line_without_ending(&lines[enabled_idx]);
     let Some((prefix, rest)) = raw.split_once('[') else {
@@ -2004,7 +2004,7 @@ fn rewrite_inline_hermes_enabled(lines: &mut [String], enabled_idx: usize, add_r
     };
 
     let mut items = Vec::new();
-    let mut saw_rtk = false;
+    let mut saw_nexus = false;
     for item in items_raw.split(',') {
         let trimmed = item.trim();
         if trimmed.is_empty() {
@@ -2012,16 +2012,16 @@ fn rewrite_inline_hermes_enabled(lines: &mut [String], enabled_idx: usize, add_r
         }
 
         if is_hermes_plugin_name(trimmed) {
-            if add_rtk && !saw_rtk {
+            if add_nexus && !saw_nexus {
                 items.push(trimmed.to_string());
-                saw_rtk = true;
+                saw_nexus = true;
             }
         } else {
             items.push(trimmed.to_string());
         }
     }
 
-    if add_rtk && !saw_rtk {
+    if add_nexus && !saw_nexus {
         items.push(HERMES_PLUGIN_NAME.to_string());
     }
 
@@ -2033,17 +2033,17 @@ fn rewrite_inline_hermes_enabled(lines: &mut [String], enabled_idx: usize, add_r
     lines[enabled_idx] = replacement;
 }
 
-fn rewrite_block_hermes_enabled(lines: &mut Vec<String>, enabled_idx: usize, add_rtk: bool) {
+fn rewrite_block_hermes_enabled(lines: &mut Vec<String>, enabled_idx: usize, add_nexus: bool) {
     let enabled_end = hermes_enabled_list_end(lines, enabled_idx);
     let item_indent = hermes_enabled_list_item_indent(lines, enabled_idx, enabled_end);
     let mut kept = Vec::with_capacity(lines.len() + 1);
-    let mut saw_rtk = false;
+    let mut saw_nexus = false;
 
     for line in &lines[enabled_idx + 1..enabled_end] {
         if is_yaml_list_item_named(line, HERMES_PLUGIN_NAME) {
-            if add_rtk && !saw_rtk {
+            if add_nexus && !saw_nexus {
                 kept.push(line.clone());
-                saw_rtk = true;
+                saw_nexus = true;
             }
             continue;
         }
@@ -2051,7 +2051,7 @@ fn rewrite_block_hermes_enabled(lines: &mut Vec<String>, enabled_idx: usize, add
         kept.push(line.clone());
     }
 
-    if add_rtk && !saw_rtk {
+    if add_nexus && !saw_nexus {
         let insert_idx = kept.len();
         ensure_previous_yaml_line_ends_with_newline(&mut kept, insert_idx);
         kept.push(format!(
@@ -2061,13 +2061,13 @@ fn rewrite_block_hermes_enabled(lines: &mut Vec<String>, enabled_idx: usize, add
         ));
     }
 
-    let mut enabled_line = if add_rtk || kept.iter().any(|line| is_yaml_list_item_line(line)) {
+    let mut enabled_line = if add_nexus || kept.iter().any(|line| is_yaml_list_item_line(line)) {
         lines[enabled_idx].clone()
     } else {
         collapse_yaml_list_key_to_empty(&lines[enabled_idx])
     };
 
-    if add_rtk
+    if add_nexus
         && kept
             .iter()
             .any(|line| is_yaml_list_item_named(line, HERMES_PLUGIN_NAME))
@@ -2356,7 +2356,7 @@ fn upsert_rtk_block(content: &str, block: &str) -> (String, RtkBlockUpsert) {
 /// Returns the [`RtkBlockUpsert`] action so callers can branch on whether anything
 /// was actually changed (e.g., to skip post-install steps on `Unchanged`).
 ///
-/// `label` is shown in user-facing messages (e.g., `"rtk instructions"`,
+/// `label` is shown in user-facing messages (e.g., `"nexus instructions"`,
 /// `"Copilot instructions"`).
 fn write_rtk_block(
     path: &Path,
@@ -2662,7 +2662,7 @@ fn remove_rtk_block(content: &str) -> (String, bool) {
         }
 
         eprintln!("    Action: Manually remove the incomplete block, then re-run:");
-        eprintln!("            rtk init -g");
+        eprintln!("            nexus init -g");
         (content.to_string(), false)
     } else {
         (content.to_string(), false)
@@ -3039,7 +3039,7 @@ fn patch_cursor_hooks_json(path: &Path, ctx: InitContext) -> Result<bool> {
 }
 
 /// Check if RTK preToolUse hook is already present in Cursor hooks.json
-/// Matches on legacy rtk-rewrite.sh path OR new `rtk hook cursor` command
+/// Matches on legacy rtk-rewrite.sh path OR new `nexus hook cursor` command
 fn cursor_hook_already_present(root: &serde_json::Value) -> bool {
     let hooks = match root
         .get("hooks")
@@ -3090,7 +3090,7 @@ fn insert_cursor_hook_entry(root: &mut serde_json::Value) -> Result<()> {
 }
 
 /// Remove only legacy `rtk-rewrite.sh` entries from Cursor hooks.json.
-/// Preserves any existing `rtk hook cursor` entries (new format).
+/// Preserves any existing `nexus hook cursor` entries (new format).
 fn remove_legacy_cursor_hooks_json_entries(path: &Path, ctx: InitContext) -> Result<()> {
     let InitContext { verbose, dry_run } = ctx;
     if !path.exists() {
@@ -3130,7 +3130,7 @@ fn remove_legacy_cursor_hooks_json_entries(path: &Path, ctx: InitContext) -> Res
 
 /// Remove only legacy `rtk-rewrite.sh` entries from parsed Cursor hooks.json.
 /// Returns true if any entries were removed.
-/// Does NOT remove `rtk hook cursor` entries — those are the new format.
+/// Does NOT remove `nexus hook cursor` entries — those are the new format.
 fn remove_legacy_cursor_hook_entries_from_json(root: &mut serde_json::Value) -> bool {
     let pre_tool_use = match root
         .get_mut("hooks")
@@ -3234,7 +3234,7 @@ fn remove_cursor_hook_from_json(root: &mut serde_json::Value) -> bool {
     pre_tool_use.len() < original_len
 }
 
-/// Show current rtk configuration
+/// Show current nexus configuration
 pub fn show_config(codex: bool) -> Result<()> {
     if codex {
         return show_codex_config();
@@ -3278,7 +3278,7 @@ fn show_claude_config() -> Result<()> {
             let hook_content = fs::read_to_string(&hook_path)?;
             let has_guards =
                 hook_content.contains("command -v rtk") && hook_content.contains("command -v jq");
-            let is_thin_delegator = hook_content.contains("rtk rewrite");
+            let is_thin_delegator = hook_content.contains("nexus rewrite");
             let hook_version = super::hook_check::parse_hook_version(&hook_content);
 
             if !is_executable {
@@ -3330,10 +3330,10 @@ fn show_claude_config() -> Result<()> {
                 println!("[ok] Integrity: hook hash verified");
             }
             Ok(integrity::IntegrityStatus::Tampered { .. }) => {
-                println!("[FAIL] Integrity: hook modified outside rtk init (run: rtk verify)");
+                println!("[FAIL] Integrity: hook modified outside nexus init (run: nexus verify)");
             }
             Ok(integrity::IntegrityStatus::NoBaseline) => {
-                println!("[warn] Integrity: no baseline hash (run: rtk init -g to establish)");
+                println!("[warn] Integrity: no baseline hash (run: nexus init -g to establish)");
             }
             Ok(integrity::IntegrityStatus::NotInstalled)
             | Ok(integrity::IntegrityStatus::OrphanedHash) => {
@@ -3352,10 +3352,10 @@ fn show_claude_config() -> Result<()> {
             println!("[ok] Global (~/.claude/CLAUDE.md): @NEXUS.md reference");
         } else if content.contains(RTK_BLOCK_START) {
             println!(
-                "[warn] Global (~/.claude/CLAUDE.md): old RTK block (run: rtk init -g to migrate)"
+                "[warn] Global (~/.claude/CLAUDE.md): old RTK block (run: nexus init -g to migrate)"
             );
         } else {
-            println!("[--] Global (~/.claude/CLAUDE.md): exists but rtk not configured");
+            println!("[--] Global (~/.claude/CLAUDE.md): exists but nexus not configured");
         }
     } else {
         println!("[--] Global (~/.claude/CLAUDE.md): not found");
@@ -3367,7 +3367,7 @@ fn show_claude_config() -> Result<()> {
         if content.contains("rtk") {
             println!("[ok] Local (./CLAUDE.md): nexus enabled");
         } else {
-            println!("[--] Local (./CLAUDE.md): exists but rtk not configured");
+            println!("[--] Local (./CLAUDE.md): exists but nexus not configured");
         }
     } else {
         println!("[--] Local (./CLAUDE.md): not found");
@@ -3382,7 +3382,7 @@ fn show_claude_config() -> Result<()> {
                     println!("[ok] settings.json: Nexus hook configured");
                 } else {
                     println!("[warn] settings.json: exists but RTK hook not configured");
-                    println!("    Run: rtk init -g --auto-patch");
+                    println!("    Run: nexus init -g --auto-patch");
                 }
             } else {
                 println!("[warn] settings.json: exists but invalid JSON");
@@ -3432,7 +3432,7 @@ fn show_claude_config() -> Result<()> {
                 let meta = fs::metadata(&cursor_hook)?;
                 let is_executable = meta.permissions().mode() & 0o111 != 0;
                 let content = fs::read_to_string(&cursor_hook)?;
-                let _is_thin = content.contains("rtk rewrite");
+                let _is_thin = content.contains("nexus rewrite");
 
                 if !is_executable {
                     println!(
@@ -3497,7 +3497,7 @@ fn show_codex_config() -> Result<()> {
         } else if content.contains(RTK_BLOCK_START) {
             println!("[!!] Global AGENTS.md: old inline RTK block");
         } else {
-            println!("[--] Global AGENTS.md: exists but rtk not configured");
+            println!("[--] Global AGENTS.md: exists but nexus not configured");
         }
     } else {
         println!("[--] Global AGENTS.md: not found");
@@ -3516,7 +3516,7 @@ fn show_codex_config() -> Result<()> {
         } else if content.contains(RTK_BLOCK_START) {
             println!("[!!] Local AGENTS.md: old inline RTK block");
         } else {
-            println!("[--] Local AGENTS.md: exists but rtk not configured");
+            println!("[--] Local AGENTS.md: exists but nexus not configured");
         }
     } else {
         println!("[--] Local AGENTS.md: not found");
@@ -3544,9 +3544,9 @@ fn run_opencode_only_mode(ctx: InitContext) -> Result<()> {
 
 // ─── Gemini CLI support ───────────────────────────────────────────
 
-/// Gemini hook wrapper script — delegates to `rtk hook gemini`
+/// Gemini hook wrapper script — delegates to `nexus hook gemini`
 const GEMINI_HOOK_SCRIPT: &str = r#"#!/bin/bash
-exec rtk hook gemini
+exec nexus hook gemini
 "#;
 
 fn resolve_gemini_dir() -> Result<PathBuf> {
@@ -3562,7 +3562,7 @@ pub fn run_gemini(
 ) -> Result<()> {
     let InitContext { dry_run, .. } = ctx;
     if !global {
-        anyhow::bail!("Gemini support is global-only. Use: rtk init -g --gemini");
+        anyhow::bail!("Gemini support is global-only. Use: nexus init -g --gemini");
     }
 
     let gemini_dir = resolve_gemini_dir()?;
@@ -3829,7 +3829,7 @@ const COPILOT_HOOK_JSON: &str = r#"{
 }
 "#;
 
-const COPILOT_INSTRUCTIONS: &str = r#"<!-- rtk-instructions v2 -->
+const COPILOT_INSTRUCTIONS: &str = r#"<!-- nexus-instructions v2 -->
 # RTK — Token-Optimized CLI
 
 **rtk** is a CLI proxy that filters and compresses command outputs, saving 60-90% tokens.
@@ -3840,22 +3840,22 @@ Always prefix shell commands with `rtk`:
 
 ```bash
 # Instead of:              Use:
-git status                 rtk git status
-git log -10                rtk git log -10
-cargo test                 rtk cargo test
-docker ps                  rtk docker ps
-kubectl get pods           rtk kubectl pods
+git status                 nexus git status
+git log -10                nexus git log -10
+cargo test                 nexus cargo test
+docker ps                  nexus docker ps
+kubectl get pods           nexus kubectl pods
 ```
 
 ## Meta commands (use directly)
 
 ```bash
-rtk gain              # Token savings dashboard
-rtk gain --history    # Per-command savings history
-rtk discover          # Find missed rtk opportunities
-rtk proxy <cmd>       # Run raw (no filtering) but track usage
+nexus gain              # Token savings dashboard
+nexus gain --history    # Per-command savings history
+nexus discover          # Find missed nexus opportunities
+nexus proxy <cmd>       # Run raw (no filtering) but track usage
 ```
-<!-- /rtk-instructions -->
+<!-- /nexus-instructions -->
 "#;
 
 /// Entry point for `nexus init --copilot`.
@@ -3917,21 +3917,21 @@ mod tests {
     #[test]
     fn test_init_mentions_all_top_level_commands() {
         for cmd in [
-            "rtk cargo",
-            "rtk gh",
-            "rtk vitest",
-            "rtk tsc",
-            "rtk lint",
-            "rtk prettier",
-            "rtk next",
-            "rtk playwright",
-            "rtk prisma",
-            "rtk pnpm",
-            "rtk npm",
-            "rtk curl",
-            "rtk git",
-            "rtk docker",
-            "rtk kubectl",
+            "nexus cargo",
+            "nexus gh",
+            "nexus vitest",
+            "nexus tsc",
+            "nexus lint",
+            "nexus prettier",
+            "nexus next",
+            "nexus playwright",
+            "nexus prisma",
+            "nexus pnpm",
+            "nexus npm",
+            "nexus curl",
+            "nexus git",
+            "nexus docker",
+            "nexus kubectl",
         ] {
             assert!(
                 RTK_INSTRUCTIONS.contains(cmd),
@@ -4026,7 +4026,7 @@ mod tests {
     fn test_claude_md_mode_creates_full_injection() {
         // Just verify RTK_INSTRUCTIONS constant has the right content
         assert!(RTK_INSTRUCTIONS.contains(RTK_BLOCK_START));
-        assert!(RTK_INSTRUCTIONS.contains("rtk cargo test"));
+        assert!(RTK_INSTRUCTIONS.contains("nexus cargo test"));
         assert!(RTK_INSTRUCTIONS.contains(RTK_BLOCK_END));
         assert!(RTK_INSTRUCTIONS.len() > 4000);
     }
@@ -4052,7 +4052,7 @@ mod tests {
         let (content, action) = upsert_rtk_block(&input, RTK_INSTRUCTIONS);
         assert_eq!(action, RtkBlockUpsert::Updated);
         assert!(!content.contains("OLD RTK CONTENT"));
-        assert!(content.contains("rtk cargo test")); // from current RTK_INSTRUCTIONS
+        assert!(content.contains("nexus cargo test")); // from current RTK_INSTRUCTIONS
         assert!(content.contains("# Team instructions"));
         assert!(content.contains("More notes"));
     }
@@ -4782,17 +4782,17 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let codex_dir = temp.path();
         let agents_md = codex_dir.join("AGENTS.md");
-        let rtk_md = codex_dir.join("RTK.md");
+        let nexus_md = codex_dir.join(RTK_MD);
 
         fs::write(&agents_md, "# Team rules\n\n@NEXUS.md\n").unwrap();
-        fs::write(&rtk_md, "codex config").unwrap();
+        fs::write(&nexus_md, "codex config").unwrap();
 
         let removed_first = uninstall_codex_at(codex_dir, InitContext::default()).unwrap();
         let removed_second = uninstall_codex_at(codex_dir, InitContext::default()).unwrap();
 
         assert_eq!(removed_first.len(), 2);
         assert!(removed_second.is_empty());
-        assert!(!rtk_md.exists());
+        assert!(!nexus_md.exists());
 
         let content = fs::read_to_string(&agents_md).unwrap();
         assert!(!content.contains("@NEXUS.md"));
@@ -4804,11 +4804,11 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let codex_dir = temp.path();
         let agents_md = codex_dir.join("AGENTS.md");
-        let rtk_md = codex_dir.join("RTK.md");
+        let nexus_md = codex_dir.join(RTK_MD);
         let absolute_ref = codex_rtk_md_ref(codex_dir);
 
         fs::write(&agents_md, format!("# Team rules\n\n{}\n", absolute_ref)).unwrap();
-        fs::write(&rtk_md, "codex config").unwrap();
+        fs::write(&nexus_md, "codex config").unwrap();
 
         let removed = uninstall_codex_at(codex_dir, InitContext::default()).unwrap();
 
@@ -5739,7 +5739,7 @@ mod tests {
         let (cleaned, did_remove) = remove_rtk_block(&content);
         assert!(did_remove);
         assert!(!cleaned.contains(RTK_BLOCK_START));
-        assert!(!cleaned.contains("rtk cargo test"));
+        assert!(!cleaned.contains("nexus cargo test"));
     }
 
     #[test]
@@ -5855,8 +5855,8 @@ mod tests {
 
             let content = fs::read_to_string(&plugin).unwrap();
             assert!(
-                content.contains("rtk rewrite"),
-                "extension must delegate to rtk rewrite"
+                content.contains("nexus rewrite"),
+                "extension must delegate to nexus rewrite"
             );
         });
     }
@@ -6165,7 +6165,7 @@ mod tests {
 
         let instructions_path = github_dir.join("copilot-instructions.md");
         let stale = format!(
-            "# Project rules\n\nUse rg.\n\n{}\n# OLD RTK CONTENT\nrtk foo\n{}\n",
+            "# Project rules\n\nUse rg.\n\n{}\n# OLD RTK CONTENT\nnexus foo\n{}\n",
             RTK_BLOCK_START, RTK_BLOCK_END
         );
         fs::write(&instructions_path, &stale).unwrap();
@@ -6183,7 +6183,7 @@ mod tests {
             "Stale RTK block content must be removed"
         );
         assert!(
-            updated.contains("rtk cargo test"),
+            updated.contains("nexus cargo test"),
             "Fresh COPILOT_INSTRUCTIONS content must be present"
         );
     }
@@ -6221,7 +6221,7 @@ mod tests {
         let content = fs::read_to_string(&instructions_path).unwrap();
         assert!(content.contains(RTK_BLOCK_START));
         assert!(content.contains(RTK_BLOCK_END));
-        assert!(content.contains("rtk cargo test"));
+        assert!(content.contains("nexus cargo test"));
     }
 
     #[test]

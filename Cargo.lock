@@ -746,6 +746,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "nexus"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "automod",
+ "chrono",
+ "clap",
+ "colored",
+ "dirs",
+ "flate2",
+ "getrandom 0.4.2",
+ "ignore",
+ "lazy_static",
+ "libc",
+ "quick-xml",
+ "regex",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "toml",
+ "ureq",
+ "walkdir",
+ "which",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1752,34 +1780,6 @@ dependencies = [
  "quote",
  "syn",
  "synstructure",
-]
-
-[[package]]
-name = "zap"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "automod",
- "chrono",
- "clap",
- "colored",
- "dirs",
- "flate2",
- "getrandom 0.4.2",
- "ignore",
- "lazy_static",
- "libc",
- "quick-xml",
- "regex",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "toml",
- "ureq",
- "walkdir",
- "which",
 ]
 
 [[package]]

@@ -70,8 +70,8 @@ mod tests {
     #[test]
     fn test_run_already_rtk_returns_some() {
         assert_eq!(
-            rewrite_command_no_prefixes("rtk git status"),
-            Some("rtk git status".into())
+            rewrite_command_no_prefixes("nexus git status"),
+            Some("nexus git status".into())
         );
     }
 
@@ -145,7 +145,7 @@ mod tests {
         fn test_no_auto_allow_bypass_for_unrecognized_commands() {
             // SECURITY: A command with no permission rules and no matching allow rule
             // must NOT be auto-allowed. This is the core of issue #1155.
-            // Even though `git status` can be rewritten to `rtk git status`,
+            // Even though `git status` can be rewritten to `nexus git status`,
             // the absence of an allow rule means Default → exit 3 → ask.
             let verdict = check_command_with_rules("git status", &[], &[], &[]);
             assert_eq!(verdict, PermissionVerdict::Default);
