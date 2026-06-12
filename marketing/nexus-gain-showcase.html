@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Nexus — 96% Token Savings</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 40px 20px;
+  }
+
+  .terminal-wrap {
+    width: 100%;
+    max-width: 880px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow:
+      0 24px 60px rgba(0,0,0,0.55),
+      0 0 0 1px rgba(255,255,255,0.08);
+    background: #0d1117;
+  }
+
+  .terminal-bar {
+    background: #161b22;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .traffic-light {
+    width: 12px; height: 12px; border-radius: 50%;
+  }
+  .red { background: #ff5f57; }
+  .yellow { background: #febc2e; }
+  .green { background: #28c840; }
+  .title {
+    flex: 1;
+    text-align: center;
+    color: #8b949e;
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.5px;
+  }
+
+  .terminal-body {
+    padding: 28px 32px 36px;
+    font-family: ui-monospace, "SF Mono", Menlo, "Cascadia Code", monospace;
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: #c9d1d9;
+  }
+
+  .prompt   { color: #7ee787; }
+  .user     { color: #79c0ff; }
+  .cmd      { color: #ffa657; }
+  .banner   { color: #f0f6fc; font-weight: 600; letter-spacing: 0.4px; }
+  .divider  { color: #30363d; }
+  .label    { color: #8b949e; }
+  .value    { color: #f0f6fc; font-weight: 600; }
+  .accent   { color: #7ee787; font-weight: 700; }
+  .savings  { color: #4ade80; font-weight: 700; }
+  .gold     { color: #fbbf24; font-weight: 600; }
+  .meter-bg { color: #21262d; }
+  .meter-fg { color: #4ade80; }
+
+  pre {
+    white-space: pre;
+    margin: 0;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(74, 222, 128, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    color: #4ade80;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-left: 8px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .footer {
+    margin-top: 24px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .footer a { color: #79c0ff; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div>
+  <div class="terminal-wrap">
+
+    <div class="terminal-bar">
+      <div class="traffic-light red"></div>
+      <div class="traffic-light yellow"></div>
+      <div class="traffic-light green"></div>
+      <div class="title">nexus@nexus — zsh — 90×30</div>
+    </div>
+
+    <div class="terminal-body">
+<pre>
+<span class="prompt">➜</span>  <span class="user">~/projects/api</span> <span class="cmd">nexus gain</span>
+
+<span class="banner">Nexus Token Savings (Global Scope)</span>
+<span class="divider">════════════════════════════════════════════════════════════</span>
+
+  <span class="label">Total commands:</span>    <span class="value">1,247</span>
+  <span class="label">Input tokens:</span>      <span class="value">418,902</span>
+  <span class="label">Output tokens:</span>     <span class="value">15,431</span>
+  <span class="label">Tokens saved:</span>      <span class="savings">403,471</span> <span class="accent">(96.3%)</span>
+  <span class="label">Total exec time:</span>   <span class="value">4.2s</span>  <span class="label">(avg 3ms)</span>
+
+  <span class="label">Efficiency meter:</span>  <span class="meter-fg">████████████████████████</span> <span class="accent">96.3%</span> <span class="badge">PEAK</span>
+
+<span class="banner">By Command</span>
+<span class="divider">────────────────────────────────────────────────────────────────────────</span>
+  <span class="label">#  Command                   Count  Saved      Avg%    Time  Impact   </span>
+<span class="divider">────────────────────────────────────────────────────────────────────────</span>
+  <span class="gold">1.</span>  nexus cargo test              184  142,810   <span class="savings">98.4%</span>     2ms  <span class="meter-fg">██████████</span>
+  <span class="gold">2.</span>  nexus git status              221   89,372   <span class="savings">94.1%</span>     2ms  <span class="meter-fg">██████████</span>
+  <span class="gold">3.</span>  nexus git log -n 20            96   58,118   <span class="savings">92.7%</span>     3ms  <span class="meter-fg">█████████░</span>
+  <span class="gold">4.</span>  nexus gh pr view               43   42,915   <span class="savings">97.6%</span>     4ms  <span class="meter-fg">█████████░</span>
+  <span class="gold">5.</span>  nexus pnpm list                17   28,402   <span class="savings">91.2%</span>     6ms  <span class="meter-fg">████████░░</span>
+  <span class="gold">6.</span>  nexus docker ps                52   18,711   <span class="savings">88.4%</span>     3ms  <span class="meter-fg">█████░░░░░</span>
+  <span class="gold">7.</span>  nexus git push                 81   12,940   <span class="savings">95.8%</span>     2ms  <span class="meter-fg">████░░░░░░</span>
+  <span class="gold">8.</span>  nexus git commit              126    8,203   <span class="savings">96.7%</span>     2ms  <span class="meter-fg">███░░░░░░░</span>
+<span class="divider">────────────────────────────────────────────────────────────────────────</span>
+
+  <span class="label">💰 Estimated cost saved</span>     <span class="savings">$12.10</span>  <span class="label">(Claude Sonnet pricing)</span>
+  <span class="label">⚡ Avg overhead per cmd</span>     <span class="value">3 ms</span>
+  <span class="label">📅 Tracking since</span>          <span class="value">7 days ago</span>
+
+<span class="prompt">➜</span>  <span class="user">~/projects/api</span> <span style="opacity:0.6">▌</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="footer">
+    Sample output. Numbers represent a typical week of AI-assisted coding. &nbsp;·&nbsp;
+    <a href="https://github.com/yash1051/nexus">github.com/yash1051/nexus</a>
+  </div>
+</div>
+
+</body>
+</html>

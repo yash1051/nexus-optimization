@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 620" width="920" height="620" font-family="ui-monospace, 'SF Mono', Menlo, 'Cascadia Code', monospace">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="20" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- Page background -->
+  <rect width="920" height="620" fill="url(#bg)"/>
+
+  <!-- Terminal window -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="40" width="840" height="520" rx="12" fill="#0d1117"/>
+
+    <!-- Title bar -->
+    <rect x="40" y="40" width="840" height="44" rx="12" fill="#161b22"/>
+    <rect x="40" y="68" width="840" height="16" fill="#161b22"/>
+    <line x1="40" y1="84" x2="880" y2="84" stroke="#30363d" stroke-width="1"/>
+
+    <!-- Traffic lights -->
+    <circle cx="64" cy="62" r="6" fill="#ff5f57"/>
+    <circle cx="82" cy="62" r="6" fill="#febc2e"/>
+    <circle cx="100" cy="62" r="6" fill="#28c840"/>
+    <text x="460" y="66" fill="#8b949e" font-size="12" text-anchor="middle" letter-spacing="0.4">nexus@nexus — zsh — 90×30</text>
+  </g>
+
+  <!-- Terminal body -->
+  <g font-size="13.5">
+    <!-- Prompt line -->
+    <text x="68" y="118"><tspan fill="#7ee787">➜</tspan>  <tspan fill="#79c0ff">~/projects/api</tspan> <tspan fill="#ffa657">nexus gain</tspan></text>
+
+    <!-- Banner -->
+    <text x="68" y="152" fill="#f0f6fc" font-weight="700" letter-spacing="0.5">Nexus Token Savings (Global Scope)</text>
+    <text x="68" y="170" fill="#30363d">════════════════════════════════════════════════════════════</text>
+
+    <!-- Summary block -->
+    <text x="80" y="198" fill="#8b949e">Total commands:</text>    <text x="240" y="198" fill="#f0f6fc" font-weight="600">1,247</text>
+    <text x="80" y="218" fill="#8b949e">Input tokens:</text>      <text x="240" y="218" fill="#f0f6fc" font-weight="600">418,902</text>
+    <text x="80" y="238" fill="#8b949e">Output tokens:</text>     <text x="240" y="238" fill="#f0f6fc" font-weight="600">15,431</text>
+    <text x="80" y="258" fill="#8b949e">Tokens saved:</text>      <text x="240" y="258"><tspan fill="#4ade80" font-weight="700">403,471</tspan> <tspan fill="#7ee787" font-weight="700">(96.3%)</tspan></text>
+    <text x="80" y="278" fill="#8b949e">Total exec time:</text>   <text x="240" y="278"><tspan fill="#f0f6fc" font-weight="600">4.2s</tspan> <tspan fill="#8b949e">(avg 3ms)</tspan></text>
+
+    <!-- Efficiency meter -->
+    <text x="80" y="306" fill="#8b949e">Efficiency meter:</text>
+    <text x="240" y="306"><tspan fill="#4ade80">████████████████████████</tspan> <tspan fill="#7ee787" font-weight="700">96.3%</tspan></text>
+
+    <!-- Peak badge -->
+    <rect x="495" y="293" width="60" height="20" rx="10" fill="#4ade80" fill-opacity="0.15" stroke="#4ade80" stroke-opacity="0.4" stroke-width="1"/>
+    <text x="525" y="307" fill="#4ade80" font-size="11" font-weight="700" text-anchor="middle">PEAK</text>
+
+    <!-- By Command section -->
+    <text x="68" y="340" fill="#f0f6fc" font-weight="700">By Command</text>
+    <text x="68" y="358" fill="#30363d">────────────────────────────────────────────────────────────────────────</text>
+    <text x="68" y="376" fill="#8b949e">#  Command                   Count  Saved      Avg%    Time  Impact</text>
+    <text x="68" y="394" fill="#30363d">────────────────────────────────────────────────────────────────────────</text>
+
+    <text x="68" y="414"><tspan fill="#fbbf24" font-weight="700">1.</tspan>  <tspan fill="#c9d1d9">nexus cargo test              184  142,810   </tspan><tspan fill="#4ade80" font-weight="700">98.4%</tspan><tspan fill="#c9d1d9">     2ms  </tspan><tspan fill="#4ade80">██████████</tspan></text>
+    <text x="68" y="432"><tspan fill="#fbbf24" font-weight="700">2.</tspan>  <tspan fill="#c9d1d9">nexus git status              221   89,372   </tspan><tspan fill="#4ade80" font-weight="700">94.1%</tspan><tspan fill="#c9d1d9">     2ms  </tspan><tspan fill="#4ade80">██████████</tspan></text>
+    <text x="68" y="450"><tspan fill="#fbbf24" font-weight="700">3.</tspan>  <tspan fill="#c9d1d9">nexus git log -n 20            96   58,118   </tspan><tspan fill="#4ade80" font-weight="700">92.7%</tspan><tspan fill="#c9d1d9">     3ms  </tspan><tspan fill="#4ade80">█████████</tspan><tspan fill="#30363d">░</tspan></text>
+    <text x="68" y="468"><tspan fill="#fbbf24" font-weight="700">4.</tspan>  <tspan fill="#c9d1d9">nexus gh pr view               43   42,915   </tspan><tspan fill="#4ade80" font-weight="700">97.6%</tspan><tspan fill="#c9d1d9">     4ms  </tspan><tspan fill="#4ade80">█████████</tspan><tspan fill="#30363d">░</tspan></text>
+    <text x="68" y="486"><tspan fill="#fbbf24" font-weight="700">5.</tspan>  <tspan fill="#c9d1d9">nexus pnpm list                17   28,402   </tspan><tspan fill="#4ade80" font-weight="700">91.2%</tspan><tspan fill="#c9d1d9">     6ms  </tspan><tspan fill="#4ade80">████████</tspan><tspan fill="#30363d">░░</tspan></text>
+    <text x="68" y="504"><tspan fill="#fbbf24" font-weight="700">6.</tspan>  <tspan fill="#c9d1d9">nexus docker ps                52   18,711   </tspan><tspan fill="#4ade80" font-weight="700">88.4%</tspan><tspan fill="#c9d1d9">     3ms  </tspan><tspan fill="#4ade80">█████</tspan><tspan fill="#30363d">░░░░░</tspan></text>
+
+    <text x="68" y="528" fill="#30363d">────────────────────────────────────────────────────────────────────────</text>
+
+    <!-- Bottom stats -->
+    <text x="80" y="552"><tspan fill="#8b949e">💰 Estimated cost saved</tspan>     <tspan fill="#4ade80" font-weight="700">$12.10</tspan>  <tspan fill="#8b949e" font-size="12">(Claude Sonnet pricing)</tspan></text>
+
+    <!-- Footer line -->
+    <text x="460" y="595" fill="#6b7280" font-size="11" text-anchor="middle">Sample output  ·  github.com/yash1051/nexus</text>
+  </g>
+</svg>

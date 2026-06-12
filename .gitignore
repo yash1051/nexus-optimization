@@ -1,0 +1,79 @@
+# Build
+/target
+
+# Environment & Secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+credentials.json
+secrets.json
+*.secret
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+.next
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+*.cast.bak
+
+# Benchmark results (fixture data, not infra)
+scripts/benchmark/diff/
+scripts/benchmark/rtk/
+scripts/benchmark/unix/
+benchmark-report.md
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+rtk_tracking.db
+claudedocs
+.omc
+
+# Vitals provenance data
+.vitals/
+.worktrees/
+
+# icm
+.fastembed_cache/
+
+# Local Claude Code / AI workspace configs (keep personal)
+.claude/
+
+# Local memory snapshots
+memory/
+MEMORY.md
+
+# Upstream-specific files excluded from initial release
+.github/
+Formula/
+.rtk/
+CHANGELOG.md
+CLAUDE.md
+DISCLAIMER.md
+SECURITY.md
+INSTALL.md
+README_es.md
+README_fr.md
+README_ja.md
+README_ko.md
+README_zh.md
+docs/
+openclaw/
+scripts/
+.release-please-manifest.json
+release-please-config.json
+.semgrep.yml
+nexus/

@@ -1,0 +1,66 @@
+[package]
+name = "nexus"
+version = "0.1.0"
+edition = "2021"
+description = "Nexus - High-performance CLI proxy that snips command output before it hits your AI"
+license = "Apache-2.0"
+readme = "README.md"
+keywords = ["cli", "llm", "ai", "filter", "productivity"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+anyhow = "1.0"
+ignore = "0.4"
+walkdir = "2"
+regex = "1"
+lazy_static = "1.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+colored = "2"
+dirs = "5"
+rusqlite = { version = "0.31", features = ["bundled"] }
+toml = "0.8"
+chrono = "0.4"
+tempfile = "3"
+sha2 = "0.10"
+ureq = "2"
+getrandom = "0.4"
+flate2 = "1.0"
+quick-xml = "0.37"
+which = "8"
+automod = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[build-dependencies]
+toml = "0.8"
+
+[dev-dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# cargo-deb configuration
+[package.metadata.deb]
+license-file = ["LICENSE", "0"]
+extended-description = "Nexus filters and compresses command outputs before they reach your AI context, saving 60-90% of tokens."
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/nexus", "usr/bin/", "755"],
+]
+# cargo-generate-rpm configuration
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/nexus", dest = "/usr/bin/nexus", mode = "755" },
+]
+
+[lints.rust]
+unsafe_code = "deny"
+warnings = "deny"
