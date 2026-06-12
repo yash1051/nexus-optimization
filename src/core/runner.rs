@@ -110,12 +110,23 @@ pub fn run(
             };
             let filtered = filter_fn(text_to_filter);
 
-            if let Some(label) = opts.tee_label {
-                print_with_hint(&filtered, raw, label, exit_code);
-            } else if opts.no_trailing_newline {
-                print!("{}", filtered);
+            // Delta layer: a successful command whose filtered output is
+            // identical to its last run in this directory collapses to a
+            // one-line notice (small changes to a diff). The command still
+            // ran — only the display is deduplicated. Failures always print.
+            let display = if exit_code == 0 {
+                crate::core::read_cache::dedupe_command_output(&cmd_label, &filtered)
+                    .unwrap_or_else(|| filtered.clone())
             } else {
-                println!("{}", filtered);
+                filtered.clone()
+            };
+
+            if let Some(label) = opts.tee_label {
+                print_with_hint(&display, raw, label, exit_code);
+            } else if opts.no_trailing_newline {
+                print!("{}", display);
+            } else {
+                println!("{}", display);
             }
 
             let raw_for_tracking = if opts.filter_stdout_only {
@@ -127,7 +138,7 @@ pub fn run(
                 &cmd_label,
                 &format!("rtk {}", cmd_label),
                 raw_for_tracking,
-                &filtered,
+                &display,
             );
             Ok(exit_code)
         }

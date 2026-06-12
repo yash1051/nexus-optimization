@@ -205,7 +205,7 @@ Efficiency meter: ████████████████████�
 
 ## 🏗️ How It Works
 
-12 filtering strategies applied per command:
+13 filtering strategies applied per command:
 
 | Strategy | What It Does | Reduction |
 |---|---|---|
@@ -221,6 +221,9 @@ Efficiency meter: ████████████████████�
 | **JSON/Text Dual** | Use `--format json` when available | 80%+ |
 | **State Machine** | Pytest → counts + failures | 90%+ |
 | **NDJSON Streaming** | `go test` → aggregated summary | 90%+ |
+| **Delta Dedup** | Repeat run with identical output → one-line notice; small change → diff only | 98–99% |
+
+**Delta Dedup** applies to `nexus read` and all filtered command outputs. The command still runs every time — only the display is deduplicated, so results are never stale. Guards: 4h TTL, diff must be ≥40% smaller than full output, failures always print in full. Escape hatches: `nexus read --no-cache`, `RTK_NO_READ_CACHE=1` (reads), `RTK_NO_DELTA=1` (commands), or `[read_cache]` in config.toml.
 
 ---
 
@@ -245,6 +248,11 @@ exclude_commands = ["curl", "playwright"]
 [tee]
 enabled = true
 mode = "failures"       # "failures", "always", or "never"
+
+[read_cache]
+enabled = true          # delta dedup for reads + command outputs
+ttl_minutes = 240       # full content re-sent after this
+commands = true         # set false to delta-dedup file reads only
 ```
 
 ---

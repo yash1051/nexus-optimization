@@ -311,8 +311,10 @@ pub fn run(
     let dirs_count = dirs.len();
     let total_files = files.len();
 
-    println!("{}F {}D:", total_files, dirs_count);
-    println!();
+    // Build the full output in a buffer so the delta layer can dedupe
+    // repeat runs and tracking sees exactly what was printed.
+    let mut out = String::new();
+    out.push_str(&format!("{}F {}D:\n\n", total_files, dirs_count));
 
     // Display with proper --max limiting (count individual files)
     let mut shown = 0;
@@ -330,7 +332,7 @@ pub fn run(
 
         let remaining_budget = max_results - shown;
         if files_in_dir.len() <= remaining_budget {
-            println!("{}/ {}", dir_display, files_in_dir.join(" "));
+            out.push_str(&format!("{}/ {}\n", dir_display, files_in_dir.join(" ")));
             shown += files_in_dir.len();
         } else {
             // Partial display: show only what fits in budget
@@ -339,14 +341,14 @@ pub fn run(
                 .take(remaining_budget)
                 .cloned()
                 .collect();
-            println!("{}/ {}", dir_display, partial.join(" "));
+            out.push_str(&format!("{}/ {}\n", dir_display, partial.join(" ")));
             shown += partial.len();
             break;
         }
     }
 
     if shown < total_files {
-        println!("+{} more", total_files - shown);
+        out.push_str(&format!("+{} more\n", total_files - shown));
     }
 
     // Extension summary
@@ -359,9 +361,7 @@ pub fn run(
         *by_ext.entry(ext).or_default() += 1;
     }
 
-    let mut ext_line = String::new();
     if by_ext.len() > 1 {
-        println!();
         let mut exts: Vec<_> = by_ext.iter().collect();
         exts.sort_by(|a, b| b.1.cmp(a.1));
         let ext_str: Vec<String> = exts
@@ -369,17 +369,14 @@ pub fn run(
             .take(5)
             .map(|(e, c)| format!(".{}({})", e, c))
             .collect();
-        ext_line = format!("ext: {}", ext_str.join(" "));
-        println!("{}", ext_line);
+        out.push_str(&format!("\next: {}\n", ext_str.join(" ")));
     }
 
-    let rtk_output = format!("{}F {}D + {}", total_files, dirs_count, ext_line);
-    timer.track(
-        &format!("find {} -name '{}'", path, effective_pattern),
-        "rtk find",
-        &raw_output,
-        &rtk_output,
-    );
+    let cmd_label = format!("find {} -name '{}'", path, effective_pattern);
+    let display = crate::core::read_cache::dedupe_command_output(&cmd_label, &out)
+        .unwrap_or_else(|| out.clone());
+    print!("{}", display);
+    timer.track(&cmd_label, "rtk find", &raw_output, &display);
 
     Ok(())
 }

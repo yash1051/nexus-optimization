@@ -155,13 +155,11 @@ pub fn run(
         rtk_output.push_str(&format!("[+{} more]\n", total_matches - shown));
     }
 
-    print!("{}", rtk_output);
-    timer.track(
-        &format!("grep -rn '{}' {}", pattern, path),
-        "rtk grep",
-        &raw_output,
-        &rtk_output,
-    );
+    let cmd_label = format!("grep -rn '{}' {}", pattern, path);
+    let display = crate::core::read_cache::dedupe_command_output(&cmd_label, &rtk_output)
+        .unwrap_or_else(|| rtk_output.clone());
+    print!("{}", display);
+    timer.track(&cmd_label, "rtk grep", &raw_output, &display);
 
     Ok(exit_code)
 }

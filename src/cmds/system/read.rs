@@ -91,13 +91,15 @@ pub fn run(
             line_numbers
         );
         let display_path = file.display().to_string();
-        match ReadCache::from_config().check_and_update(&key, &display_path, &rtk_output) {
+        let hint = format!("full file: nexus read --no-cache {}", display_path);
+        match ReadCache::from_config().check_and_update(&key, &display_path, &hint, &rtk_output) {
             ReadCacheResult::Miss => {
                 print!("{}", rtk_output);
                 rtk_output.clone()
             }
             ReadCacheResult::Unchanged { age_minutes, lines } => {
-                let notice = read_cache::unchanged_notice(&display_path, age_minutes, lines);
+                let notice =
+                    read_cache::unchanged_notice(&display_path, age_minutes, lines, &hint);
                 print!("{}", notice);
                 notice
             }

@@ -1,13 +1,15 @@
-//! Delta-read cache: avoids re-sending file content the AI has already seen.
+//! Delta cache: avoids re-sending output the AI has already seen.
 //!
-//! On repeated reads of the same file (same filter/window options):
-//! - unchanged file  -> one-line "unchanged" notice instead of full content
-//! - changed file    -> unified diff against the previously sent content
+//! Applies to file reads (`nexus read`) and to filtered command outputs
+//! (via `runner` and the TOML filter path). On a repeat with the same key:
+//! - identical output -> one-line "unchanged" notice
+//! - changed output   -> unified diff against the previously sent version
 //!
-//! Both are lossless for the consuming agent: the prior content is already in
+//! Both are lossless for the consuming agent: the prior output is already in
 //! its context, so "unchanged" or "prior + diff" carries the same information
-//! as a full re-send. A TTL bounds staleness across sessions, and the notice
-//! always names the escape hatch (`--no-cache`) for full content.
+//! as a full re-send. The underlying command still runs every time — only the
+//! display is deduplicated, so results are never stale. A TTL bounds context
+//! drift across sessions, and every notice names its escape hatch.
 
 use super::constants::RTK_DATA_DIR;
 use serde::{Deserialize, Serialize};
@@ -20,6 +22,8 @@ const MAX_CACHED_BYTES: usize = 2 * 1024 * 1024;
 const DIFF_WORTHWHILE_RATIO: f64 = 0.6;
 /// LCS DP guard: beyond this many changed lines per side, fall back to full output.
 const MAX_DIFF_LINES: usize = 3000;
+/// Outputs smaller than this aren't worth replacing with a notice.
+const MIN_DEDUP_BYTES: usize = 240;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CacheEntry {
@@ -64,9 +68,16 @@ impl ReadCache {
     }
 
     /// Compare `output` against the cached copy under `key`, store the new
-    /// output, and report what should be printed. Any I/O failure degrades to
-    /// `Miss` — the cache must never break a read.
-    pub fn check_and_update(&self, key: &str, display_path: &str, output: &str) -> ReadCacheResult {
+    /// output, and report what should be printed. `recover_hint` tells the
+    /// agent how to get full output if its context no longer has it. Any I/O
+    /// failure degrades to `Miss` — the cache must never break a command.
+    pub fn check_and_update(
+        &self,
+        key: &str,
+        display_label: &str,
+        recover_hint: &str,
+        output: &str,
+    ) -> ReadCacheResult {
         if !self.enabled || output.len() > MAX_CACHED_BYTES {
             return ReadCacheResult::Miss;
         }
@@ -87,7 +98,7 @@ impl ReadCache {
                         lines: output.lines().count(),
                     }
                 } else {
-                    match render_diff(&entry.content, output, display_path, age_minutes) {
+                    match render_diff(&entry.content, output, display_label, recover_hint, age_minutes) {
                         Some(rendered) => ReadCacheResult::Diff { rendered },
                         None => ReadCacheResult::Miss,
                     }
@@ -128,7 +139,13 @@ fn hash_key(key: &str) -> String {
 
 /// Build the full replacement output (notice + unified diff), or `None` when
 /// a diff would not be worthwhile (too large or barely smaller than full).
-fn render_diff(old: &str, new: &str, display_path: &str, age_minutes: i64) -> Option<String> {
+fn render_diff(
+    old: &str,
+    new: &str,
+    display_label: &str,
+    recover_hint: &str,
+    age_minutes: i64,
+) -> Option<String> {
     let old_lines: Vec<&str> = old.lines().collect();
     let new_lines: Vec<&str> = new.lines().collect();
 
@@ -184,8 +201,8 @@ fn render_diff(old: &str, new: &str, display_path: &str, age_minutes: i64) -> Op
     }
 
     let header = format!(
-        "[nexus delta] {} changed since last read {}m ago — diff vs. content already in your context (full file: nexus read --no-cache {})\n",
-        display_path, age_minutes, display_path
+        "[nexus delta] {} changed since {}m ago — diff vs. previous output already in your context ({})\n",
+        display_label, age_minutes, recover_hint
     );
     let rendered = format!("{}{}", header, body);
 
@@ -245,12 +262,61 @@ fn lcs_diff<'a>(old: &[&'a str], new: &[&'a str]) -> Vec<DiffOp<'a>> {
     ops
 }
 
-/// One-line notice for an unchanged repeat read.
-pub fn unchanged_notice(display_path: &str, age_minutes: i64, lines: usize) -> String {
+/// One-line notice for an unchanged repeat output.
+pub fn unchanged_notice(
+    display_label: &str,
+    age_minutes: i64,
+    lines: usize,
+    recover_hint: &str,
+) -> String {
     format!(
-        "[nexus delta] {} unchanged since last read {}m ago ({} lines, already in your context — full file: nexus read --no-cache {})\n",
-        display_path, age_minutes, lines, display_path
+        "[nexus delta] {} unchanged since {}m ago ({} lines, already in your context — {})\n",
+        display_label, age_minutes, lines, recover_hint
     )
+}
+
+/// Delta-dedup a successful command's filtered output. Returns the replacement
+/// text to print (notice or diff), or `None` to print the original output.
+/// Keyed by working directory + command line so identical commands in
+/// different repos never collide.
+pub fn dedupe_command_output(cmd_label: &str, output: &str) -> Option<String> {
+    if output.len() < MIN_DEDUP_BYTES {
+        return None;
+    }
+    let cfg = super::config::Config::load().unwrap_or_default();
+    if !cfg.read_cache.enabled
+        || !cfg.read_cache.commands
+        || std::env::var_os("RTK_NO_DELTA").is_some()
+    {
+        return None;
+    }
+    let cache = ReadCache {
+        dir: cache_dir(),
+        ttl_minutes: cfg.read_cache.ttl_minutes as i64,
+        enabled: true,
+    };
+    let cwd = std::env::current_dir()
+        .map(|p| p.display().to_string())
+        .unwrap_or_default();
+    dedupe_with_cache(&cache, &cwd, cmd_label, output)
+}
+
+fn dedupe_with_cache(
+    cache: &ReadCache,
+    cwd: &str,
+    cmd_label: &str,
+    output: &str,
+) -> Option<String> {
+    let key = format!("cmd|{}|{}", cwd, cmd_label);
+    let label = format!("`{}` output", cmd_label);
+    let hint = "full output: rerun with RTK_NO_DELTA=1";
+    match cache.check_and_update(&key, &label, hint, output) {
+        ReadCacheResult::Miss => None,
+        ReadCacheResult::Unchanged { age_minutes, lines } => {
+            Some(unchanged_notice(&label, age_minutes, lines, hint))
+        }
+        ReadCacheResult::Diff { rendered } => Some(rendered),
+    }
 }
 
 #[cfg(test)]
@@ -267,7 +333,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let c = cache(&dir);
         assert!(matches!(
-            c.check_and_update("k", "f.rs", "hello\n"),
+            c.check_and_update("k", "f.rs", "hint","hello\n"),
             ReadCacheResult::Miss
         ));
     }
@@ -276,8 +342,8 @@ mod tests {
     fn second_identical_read_is_unchanged() {
         let dir = TempDir::new().unwrap();
         let c = cache(&dir);
-        c.check_and_update("k", "f.rs", "hello\nworld\n");
-        match c.check_and_update("k", "f.rs", "hello\nworld\n") {
+        c.check_and_update("k", "f.rs", "hint","hello\nworld\n");
+        match c.check_and_update("k", "f.rs", "hint","hello\nworld\n") {
             ReadCacheResult::Unchanged { lines, .. } => assert_eq!(lines, 2),
             _ => panic!("expected Unchanged"),
         }
@@ -289,8 +355,8 @@ mod tests {
         let c = cache(&dir);
         let old: String = (0..100).map(|i| format!("line {}\n", i)).collect();
         let new = old.replace("line 50\n", "line fifty\n");
-        c.check_and_update("k", "f.rs", &old);
-        match c.check_and_update("k", "f.rs", &new) {
+        c.check_and_update("k", "f.rs", "hint",&old);
+        match c.check_and_update("k", "f.rs", "hint",&new) {
             ReadCacheResult::Diff { rendered } => {
                 assert!(rendered.contains("-line 50"));
                 assert!(rendered.contains("+line fifty"));
@@ -306,10 +372,10 @@ mod tests {
         let c = cache(&dir);
         let old: String = (0..50).map(|i| format!("alpha {}\n", i)).collect();
         let new: String = (0..50).map(|i| format!("omega {}\n", i)).collect();
-        c.check_and_update("k", "f.rs", &old);
+        c.check_and_update("k", "f.rs", "hint",&old);
         // Diff would be ~2x the file: not worthwhile, so Miss (full output).
         assert!(matches!(
-            c.check_and_update("k", "f.rs", &new),
+            c.check_and_update("k", "f.rs", "hint",&new),
             ReadCacheResult::Miss
         ));
     }
@@ -318,10 +384,10 @@ mod tests {
     fn expired_entry_is_miss() {
         let dir = TempDir::new().unwrap();
         let c = ReadCache::for_test(dir.path().to_path_buf(), 0);
-        c.check_and_update("k", "f.rs", "hello\n");
+        c.check_and_update("k", "f.rs", "hint","hello\n");
         std::thread::sleep(std::time::Duration::from_millis(1100));
         assert!(matches!(
-            c.check_and_update("k", "f.rs", "hello\n"),
+            c.check_and_update("k", "f.rs", "hint","hello\n"),
             ReadCacheResult::Miss
         ));
     }
@@ -330,9 +396,9 @@ mod tests {
     fn distinct_keys_do_not_collide() {
         let dir = TempDir::new().unwrap();
         let c = cache(&dir);
-        c.check_and_update("a.rs|none", "a.rs", "content\n");
+        c.check_and_update("a.rs|none", "a.rs", "hint", "content\n");
         assert!(matches!(
-            c.check_and_update("b.rs|none", "b.rs", "content\n"),
+            c.check_and_update("b.rs|none", "b.rs", "hint", "content\n"),
             ReadCacheResult::Miss
         ));
     }
@@ -343,19 +409,54 @@ mod tests {
         let c = cache(&dir);
         let big = "x".repeat(MAX_CACHED_BYTES + 1);
         assert!(matches!(
-            c.check_and_update("k", "f.rs", &big),
+            c.check_and_update("k", "f.rs", "hint",&big),
             ReadCacheResult::Miss
         ));
         assert!(matches!(
-            c.check_and_update("k", "f.rs", &big),
+            c.check_and_update("k", "f.rs", "hint",&big),
             ReadCacheResult::Miss
         ));
     }
 
     #[test]
     fn unchanged_notice_mentions_escape_hatch() {
-        let n = unchanged_notice("src/main.rs", 5, 100);
+        let n = unchanged_notice("src/main.rs", 5, 100, "full file: nexus read --no-cache src/main.rs");
         assert!(n.contains("--no-cache"));
         assert!(n.contains("src/main.rs"));
+    }
+
+    #[test]
+    fn command_dedupe_repeat_yields_notice() {
+        let dir = TempDir::new().unwrap();
+        let c = cache(&dir);
+        let output = "line of command output\n".repeat(100);
+        assert!(dedupe_with_cache(&c, "/repo", "git status", &output).is_none());
+        let notice = dedupe_with_cache(&c, "/repo", "git status", &output)
+            .expect("second identical run should dedupe");
+        assert!(notice.contains("git status"));
+        assert!(notice.contains("unchanged"));
+        assert!(notice.contains("RTK_NO_DELTA"));
+        assert!(notice.len() < output.len() / 10);
+    }
+
+    #[test]
+    fn command_dedupe_distinct_cwd_no_collision() {
+        let dir = TempDir::new().unwrap();
+        let c = cache(&dir);
+        let output = "line\n".repeat(100);
+        assert!(dedupe_with_cache(&c, "/repo-a", "git status", &output).is_none());
+        assert!(dedupe_with_cache(&c, "/repo-b", "git status", &output).is_none());
+    }
+
+    #[test]
+    fn command_dedupe_changed_output_yields_diff() {
+        let dir = TempDir::new().unwrap();
+        let c = cache(&dir);
+        let old = "line\n".repeat(100);
+        let new = format!("{}one new failure\n", old);
+        assert!(dedupe_with_cache(&c, "/repo", "pytest", &old).is_none());
+        let diff = dedupe_with_cache(&c, "/repo", "pytest", &new)
+            .expect("changed output should yield diff");
+        assert!(diff.contains("+one new failure"));
     }
 }

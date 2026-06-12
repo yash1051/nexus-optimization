@@ -34,6 +34,14 @@ pub struct ReadCacheConfig {
     /// How long a cached read stays valid. Past this, full content is re-sent
     /// (protects against the agent's context no longer containing the file).
     pub ttl_minutes: u64,
+    /// Also delta-dedup successful filtered command outputs (runner + TOML
+    /// paths). Disable per-run with RTK_NO_DELTA=1.
+    #[serde(default = "default_true")]
+    pub commands: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for ReadCacheConfig {
@@ -41,6 +49,7 @@ impl Default for ReadCacheConfig {
         Self {
             enabled: true,
             ttl_minutes: 240,
+            commands: true,
         }
     }
 }

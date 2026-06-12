@@ -1232,6 +1232,11 @@ fn run_fallback(parse_error: clap::Error) -> Result<i32> {
                         .on_empty
                         .clone()
                         .unwrap_or_else(|| "ok".to_string())
+                } else if output.status.success() {
+                    // Delta layer: identical output to the last successful run
+                    // collapses to a notice; small changes to a diff.
+                    core::read_cache::dedupe_command_output(&raw_command, &filtered)
+                        .unwrap_or_else(|| filtered.clone())
                 } else {
                     filtered.clone()
                 };
@@ -1244,7 +1249,7 @@ fn run_fallback(parse_error: clap::Error) -> Result<i32> {
                     &raw_command,
                     &format!("rtk:toml {}", raw_command),
                     &combined_raw,
-                    &filtered,
+                    &display,
                 );
                 core::tracking::record_parse_failure_silent(&raw_command, &error_message, true);
 
