@@ -1,3 +1,7 @@
+<picture>
+  <img alt="Nexus" src="nexus-thumbnail.png">
+</picture>
+
 # Nexus
 
 > **Snip noisy command output before it hits your AI.**
