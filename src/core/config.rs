@@ -21,6 +21,28 @@ pub struct Config {
     pub hooks: HooksConfig,
     #[serde(default)]
     pub limits: LimitsConfig,
+    #[serde(default)]
+    pub read_cache: ReadCacheConfig,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ReadCacheConfig {
+    /// Delta-read cache: repeat reads of unchanged files return a one-line
+    /// notice; changed files return a diff. Disable per-run with --no-cache
+    /// or RTK_NO_READ_CACHE=1.
+    pub enabled: bool,
+    /// How long a cached read stays valid. Past this, full content is re-sent
+    /// (protects against the agent's context no longer containing the file).
+    pub ttl_minutes: u64,
+}
+
+impl Default for ReadCacheConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            ttl_minutes: 240,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

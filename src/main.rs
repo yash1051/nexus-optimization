@@ -108,6 +108,9 @@ enum Commands {
         /// Show line numbers
         #[arg(short = 'n', long)]
         line_numbers: bool,
+        /// Bypass the delta-read cache and always print full content
+        #[arg(long)]
+        no_cache: bool,
     },
 
     /// Generate 2-line technical summary (heuristic-based)
@@ -1437,6 +1440,7 @@ fn run_cli() -> Result<i32> {
             max_lines,
             tail_lines,
             line_numbers,
+            no_cache,
         } => {
             let mut had_error = false;
             let mut stdin_seen = false;
@@ -1455,6 +1459,7 @@ fn run_cli() -> Result<i32> {
                         max_lines,
                         tail_lines,
                         line_numbers,
+                        no_cache,
                         cli.verbose,
                     )
                 };

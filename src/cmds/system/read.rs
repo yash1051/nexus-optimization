@@ -1,6 +1,7 @@
 //! Reads source files with optional language-aware filtering to strip boilerplate.
 
 use crate::core::filter::{self, FilterLevel, Language};
+use crate::core::read_cache::{self, ReadCache, ReadCacheResult};
 use crate::core::tracking;
 use anyhow::{Context, Result};
 use std::fs;
@@ -12,6 +13,7 @@ pub fn run(
     max_lines: Option<usize>,
     tail_lines: Option<usize>,
     line_numbers: bool,
+    no_cache: bool,
     verbose: u8,
 ) -> Result<()> {
     let timer = tracking::TimedExecution::start();
@@ -70,12 +72,47 @@ pub fn run(
     } else {
         filtered.clone()
     };
-    print!("{}", rtk_output);
+
+    // Delta-read cache: replace repeat sends of known content with a notice
+    // or a diff. Keyed on path + options so different views never collide.
+    let printed = if no_cache {
+        print!("{}", rtk_output);
+        rtk_output.clone()
+    } else {
+        let canonical = file
+            .canonicalize()
+            .unwrap_or_else(|_| file.to_path_buf());
+        let key = format!(
+            "{}|{}|{:?}|{:?}|{}",
+            canonical.display(),
+            level,
+            max_lines,
+            tail_lines,
+            line_numbers
+        );
+        let display_path = file.display().to_string();
+        match ReadCache::from_config().check_and_update(&key, &display_path, &rtk_output) {
+            ReadCacheResult::Miss => {
+                print!("{}", rtk_output);
+                rtk_output.clone()
+            }
+            ReadCacheResult::Unchanged { age_minutes, lines } => {
+                let notice = read_cache::unchanged_notice(&display_path, age_minutes, lines);
+                print!("{}", notice);
+                notice
+            }
+            ReadCacheResult::Diff { rendered } => {
+                print!("{}", rendered);
+                rendered
+            }
+        }
+    };
+
     timer.track(
         &format!("cat {}", file.display()),
         "rtk read",
         &content,
-        &rtk_output,
+        &printed,
     );
     Ok(())
 }
@@ -193,8 +230,8 @@ fn main() {{
 }}"#
         )?;
 
-        // Just verify it doesn't panic
-        run(file.path(), FilterLevel::Minimal, None, None, false, 0)?;
+        // Just verify it doesn't panic (no_cache: true keeps the test hermetic)
+        run(file.path(), FilterLevel::Minimal, None, None, false, true, 0)?;
         Ok(())
     }
 
